@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #40695B; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 8pt 24pt; gap: 12pt; flex: 1; }
+.col { flex: 1; }
+h2 { font-size: 12pt; color: #40695B; margin: 0 0 4pt 0; }
+.agent-card { background: #1E2130; padding: 5pt 8pt; border-radius: 3pt; margin-bottom: 4pt; border-top: 2pt solid #B165FB; }
+.agent-card h3 { font-size: 9pt; color: #B165FB; margin: 0 0 2pt 0; }
+.agent-card p { font-size: 7pt; color: #C0C0C0; margin: 1pt 0; line-height: 1.3; }
+.pattern { background: #0D1117; padding: 4pt 6pt; border-radius: 3pt; margin-top: 2pt; }
+.pattern p { font-size: 7pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.common { background: #251E40; padding: 6pt 10pt; border-radius: 3pt; border-left: 2pt solid #B165FB; margin-top: 4pt; }
+.common h3 { font-size: 10pt; color: #B165FB; margin: 0 0 3pt 0; }
+.common p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>VoltAgent 原理二: Prompt Engineering 模式分析</h1></div>
+<div class="main">
+  <div class="col">
+    <h2>代理 Prompt 模式对比</h2>
+    <div class="agent-card">
+      <h3>api-designer (sonnet)</h3>
+      <p>"senior API designer specializing in..."</p>
+      <div class="pattern">
+        <p>When invoked:</p>
+        <p>1. Query context -> existing APIs</p>
+        <p>2. Review -> current endpoints</p>
+        <p>3. Analyze -> requirements</p>
+        <p>4. Implement -> API design</p>
+      </div>
+    </div>
+    <div class="agent-card">
+      <h3>docker-expert (sonnet)</h3>
+      <p>"senior containerization specialist..."</p>
+      <div class="pattern">
+        <p>Checklist: image_size > 70% reduced</p>
+        <p>build_time > 60% reduced</p>
+        <p>security_score > A rating</p>
+      </div>
+    </div>
+    <div class="agent-card">
+      <h3>code-reviewer (opus)</h3>
+      <p>"senior code reviewer" | 最复杂任务</p>
+      <div class="pattern">
+        <p>Output: severity-ranked findings</p>
+        <p>critical > warning > info</p>
+      </div>
+    </div>
+  </div>
+  <div class="col">
+    <h2>标准化输出格式</h2>
+    <div class="agent-card">
+      <h3>Progress Tracking (所有代理)</h3>
+      <div class="pattern">
+        <p>{"agent": "api-designer",</p>
+        <p> "status": "designing endpoints",</p>
+        <p> "progress": {"endpoints": 12}}</p>
+      </div>
+    </div>
+    <div class="agent-card">
+      <h3>Delivery Notification</h3>
+      <div class="pattern">
+        <p>"[API] 45 endpoints, OpenAPI 3.1"</p>
+        <p>"[Docker] 847MB->89MB (89% cut)"</p>
+        <p>"[Review] 47 files, 2 critical"</p>
+      </div>
+    </div>
+    <div class="common">
+      <h3>共同 Prompt 模式</h3>
+      <p>"senior" 前缀 -> 建立权威性</p>
+      <p>"expertise in" -> 知识边界定义</p>
+      <p>When invoked 4 步: 信息->分析->优化->交付</p>
+      <p>Communication Protocol: JSON 标准化</p>
+      <p>Integration: 声明协作代理</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

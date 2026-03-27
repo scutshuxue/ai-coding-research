@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #40695B; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 8pt 24pt; gap: 14pt; flex: 1; }
+.left { flex: 1.2; }
+.right { flex: 1; }
+h2 { font-size: 12pt; color: #40695B; margin: 0 0 4pt 0; }
+.code-box { background: #0D1117; padding: 6pt 8pt; border-radius: 3pt; border: 1pt solid #333; margin-bottom: 6pt; }
+.code-box p { font-size: 7pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.comment { color: #8B949E !important; }
+.field { color: #D2A8FF !important; }
+.val { color: #A5D6FF !important; }
+.section { background: #1E2130; padding: 5pt 8pt; border-radius: 3pt; border-left: 2pt solid #40695B; margin-bottom: 4pt; }
+.section h3 { font-size: 9pt; color: #40695B; margin: 0 0 2pt 0; }
+.section p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+.load-flow { display: flex; flex-direction: column; gap: 2pt; }
+.load-step { background: #1E2130; padding: 3pt 6pt; border-radius: 3pt; }
+.load-step p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+.arr p { font-size: 8pt; color: #555; margin: 0 0 0 8pt; }
+</style>
+</head>
+<body>
+<div class="header"><h1>VoltAgent 原理一: Agent .md 结构与加载机制</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>Agent 文件标准结构</h2>
+    <div class="code-box">
+      <p class="comment">--- YAML Frontmatter ---</p>
+      <p><span class="field">name:</span> <span class="val">api-designer</span></p>
+      <p><span class="field">description:</span> <span class="val">"Use when designing APIs"</span></p>
+      <p><span class="field">tools:</span> <span class="val">Read, Write, Edit, Bash, Glob, Grep</span></p>
+      <p><span class="field">model:</span> <span class="val">sonnet</span></p>
+      <p>---</p>
+      <p class="comment"># 内容模板 (7 层)</p>
+      <p>1. 角色定义 (senior + expertise)</p>
+      <p>2. When invoked: 初始化 4 步</p>
+      <p>3. 核心能力 Checklist (7-8 项)</p>
+      <p>4. 专业领域 (8-12 子项/节)</p>
+      <p>5. Communication Protocol (JSON)</p>
+      <p>6. Development Workflow (3 Phase)</p>
+      <p>7. Integration with other agents</p>
+    </div>
+    <h2>工具权限按角色分配</h2>
+    <div class="section">
+      <p>审核员: Read, Grep, Glob (只读)</p>
+      <p>研究型: + WebFetch, WebSearch</p>
+      <p>开发者: Read, Write, Edit, Bash, Glob, Grep</p>
+    </div>
+    <h2>模型选择策略</h2>
+    <div class="section">
+      <p>opus: 最复杂 (code-reviewer 多语言分析)</p>
+      <p>sonnet: 标准 (api-designer/docker-expert)</p>
+      <p>haiku: 简单高频 (task-distributor)</p>
+    </div>
+  </div>
+  <div class="right">
+    <h2>Claude Code 加载流程</h2>
+    <div class="load-flow">
+      <div class="load-step"><p>Scan: 扫描 ~/.claude/agents/ + .claude/agents/</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="load-step"><p>Parse: 解析每个 .md 的 YAML Frontmatter</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="load-step"><p>Dedup: 项目级覆盖全局级 (同名去重)</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="load-step"><p>Index: 构建搜索索引 (name/desc/category)</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="load-step"><p>Match: 用户消息 -> 匹配 description 关键词</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="load-step"><p>Load: 解析 .md 正文 -> 生成 System Prompt</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="load-step"><p>Filter: 应用 tools 字段 -> 工具权限沙箱</p></div>
+    </div>
+    <div class="section">
+      <h3>System Prompt 生成</h3>
+      <p>.md 正文 -> 角色定义 + When invoked 步骤</p>
+      <p>+ 能力清单 + 专业领域 + 通信协议</p>
+      <p>通常 2000-4000 tokens，完整角色定义</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 14pt 24pt; gap: 16pt; flex: 1; }
+.left { flex: 1.2; }
+.right { flex: 1; }
+h2 { font-size: 14pt; color: #B165FB; margin: 0 0 8pt 0; }
+.flow-step { display: flex; align-items: center; gap: 8pt; margin-bottom: 4pt; }
+.icon { width: 24pt; height: 24pt; background: #40695B; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.icon p { font-size: 10pt; color: #FFFFFF; margin: 0; }
+.icon-purple { background: #B165FB; }
+.icon-red { background: #F85149; }
+.icon-green { background: #3FB950; }
+.step-text { background: #1E2130; padding: 6pt 10pt; border-radius: 4pt; flex: 1; }
+.step-text p { font-size: 9pt; color: #C0C0C0; margin: 1pt 0; }
+.connector { margin-left: 10pt; }
+.connector p { font-size: 10pt; color: #555; margin: 1pt 0; }
+.insight { background: #1E2130; padding: 10pt 14pt; border-radius: 4pt; border-left: 3pt solid #B165FB; margin-bottom: 8pt; }
+.insight h3 { font-size: 11pt; color: #B165FB; margin: 0 0 4pt 0; }
+.insight p { font-size: 9pt; color: #C0C0C0; margin: 2pt 0; line-height: 1.4; }
+.metric { display: flex; gap: 8pt; margin-top: 8pt; }
+.metric-item { flex: 1; background: #0D1117; padding: 8pt; border-radius: 4pt; text-align: center; }
+.metric-item h3 { font-size: 20pt; color: #B165FB; margin: 0; }
+.metric-item p { font-size: 8pt; color: #999; margin: 4pt 0 0 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>原理四: 两阶段审查管线 — 做对事 vs 把事做对</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>审查流程 (Per Task)</h2>
+    <div class="flow-step">
+      <div class="icon"><p>1</p></div>
+      <div class="step-text"><p>Implementer 报告 DONE / DONE_WITH_CONCERNS</p></div>
+    </div>
+    <div class="connector"><p>  |</p></div>
+    <div class="flow-step">
+      <div class="icon icon-purple"><p>2</p></div>
+      <div class="step-text"><p><b>Spec Compliance Review</b> — 验证"做对了事"</p><p>怀疑 Implementer 报告, 逐行对比需求 vs 实现</p></div>
+    </div>
+    <div class="connector"><p>  | FAIL -> Implementer 修复 -> 重审 (max 3 次)</p></div>
+    <div class="flow-step">
+      <div class="icon icon-purple"><p>3</p></div>
+      <div class="step-text"><p><b>Code Quality Review</b> — 验证"把事做对"</p><p>代码质量 / SOLID / 测试覆盖 / 无过度重构</p></div>
+    </div>
+    <div class="connector"><p>  | FAIL -> Implementer 修复 -> 重审 (max 3 次)</p></div>
+    <div class="flow-step">
+      <div class="icon icon-green"><p>4</p></div>
+      <div class="step-text"><p>Mark Task Complete in TodoWrite</p></div>
+    </div>
+    <div class="connector"><p>  | 所有任务完成后</p></div>
+    <div class="flow-step">
+      <div class="icon icon-green"><p>5</p></div>
+      <div class="step-text"><p>Final Code Reviewer — 整体一致性检查</p></div>
+    </div>
+  </div>
+  <div class="right">
+    <h2>设计洞察</h2>
+    <div class="insight">
+      <h3>为什么顺序不可互换?</h3>
+      <p>Spec 违规修复后，代码结构会变化</p>
+      <p>提前做质量审查 = 审查旧代码 = 浪费</p>
+      <p>先 Spec 再 Quality 避免双重审查</p>
+    </div>
+    <div class="insight">
+      <h3>Max 3 次循环的信号</h3>
+      <p>超过 3 次 = 更深层问题:</p>
+      <p>1. 计划有问题 (任务定义不清)</p>
+      <p>2. 子代理能力不足 (需要更强模型)</p>
+      <p>3. 架构设计有缺陷 (需要重新思考)</p>
+      <p>此时上报人类，不再盲目重试</p>
+    </div>
+    <div class="metric">
+      <div class="metric-item"><h3>3</h3><p>Max Review<br/>Iterations</p></div>
+      <div class="metric-item"><h3>2</h3><p>Review<br/>Stages</p></div>
+      <div class="metric-item"><h3>50%+</h3><p>Token 节省<br/>v5.0.4 优化</p></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { padding: 14pt 24pt; flex: 1; }
+h2 { font-size: 14pt; color: #B165FB; margin: 0 0 8pt 0; }
+.pipeline { display: flex; align-items: flex-start; gap: 4pt; margin-bottom: 12pt; }
+.stage { background: #1E2130; padding: 8pt 10pt; border-radius: 4pt; text-align: center; flex: 1; border-top: 2pt solid #40695B; }
+.stage p { font-size: 8pt; color: #C0C0C0; margin: 2pt 0; }
+.stage-name { font-size: 9pt; color: #FFFFFF; font-weight: bold; }
+.stage-active { border-top: 2pt solid #B165FB; background: #251E40; }
+.arr { display: flex; align-items: center; padding-top: 10pt; }
+.arr p { font-size: 12pt; color: #555; margin: 0; }
+.branch-row { display: flex; gap: 12pt; margin-top: 6pt; }
+.branch { flex: 1; background: #1E2130; padding: 10pt; border-radius: 4pt; border-left: 3pt solid #40695B; }
+.branch-active { border-left: 3pt solid #B165FB; }
+.branch h3 { font-size: 11pt; color: #40695B; margin: 0 0 4pt 0; }
+.branch-active h3 { color: #B165FB; }
+.branch p { font-size: 9pt; color: #999; margin: 2pt 0; }
+.note { background: #1A2A20; padding: 8pt 12pt; border-radius: 4pt; margin-top: 10pt; border-left: 3pt solid #40695B; }
+.note p { font-size: 9pt; color: #7EE787; margin: 2pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>原理二: Skill 编排 — 线性工作流 + 条件分支</h1></div>
+<div class="main">
+  <h2>完整 Skill 编排管线</h2>
+  <div class="pipeline">
+    <div class="stage"><p class="stage-name">brainstorming</p><p>头脑风暴</p><p>精炼需求</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage"><p class="stage-name">Spec Review</p><p>规格审查</p><p>(子代理)</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage"><p class="stage-name">writing-plans</p><p>任务计划</p><p>2-5 min 粒度</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage"><p class="stage-name">Plan Review</p><p>计划审查</p><p>(子代理)</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage stage-active"><p class="stage-name">Execution</p><p>条件分支</p><p>选择执行方式</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage"><p class="stage-name">TDD Cycle</p><p>RED-GREEN</p><p>REFACTOR</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage"><p class="stage-name">Code Review</p><p>请求+处理</p><p>审查反馈</p></div>
+    <div class="arr"><p>-></p></div>
+    <div class="stage"><p class="stage-name">Finish</p><p>验证+合并</p><p>分支收尾</p></div>
+  </div>
+
+  <h2>执行方式三选一</h2>
+  <div class="branch-row">
+    <div class="branch branch-active">
+      <h3>subagent-driven-development</h3>
+      <p>推荐 | 同一会话内执行</p>
+      <p>每任务派遣独立子代理</p>
+      <p>两阶段审查: Spec -> Quality</p>
+      <p>无需人工干预, 快速迭代</p>
+    </div>
+    <div class="branch">
+      <h3>executing-plans</h3>
+      <p>跨会话 / 不支持子代理平台</p>
+      <p>连续执行, 人工检查点</p>
+      <p>适合 Cursor / OpenCode</p>
+    </div>
+    <div class="branch">
+      <h3>dispatching-parallel-agents</h3>
+      <p>并行会话执行</p>
+      <p>多个独立任务同时处理</p>
+      <p>适合大型项目加速</p>
+    </div>
+  </div>
+
+  <div class="note">
+    <p>关键设计: Skill 间通过 REQUIRED SUB-SKILL 标记隐式依赖, brainstorming 强制检查"是否已头脑风暴"</p>
+  </div>
+</div>
+</body>
+</html>

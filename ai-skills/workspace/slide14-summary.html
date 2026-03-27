@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 8pt 24pt; gap: 12pt; flex: 1; }
+.left { flex: 1; }
+.right { flex: 1; }
+h2 { font-size: 12pt; color: #B165FB; margin: 0 0 6pt 0; }
+.principle { background: #1E2130; padding: 5pt 8pt; border-radius: 3pt; margin-bottom: 3pt; display: flex; gap: 6pt; align-items: flex-start; }
+.num { background: #B165FB; color: #FFFFFF; width: 16pt; height: 16pt; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.num p { font-size: 8pt; margin: 0; color: #FFFFFF; }
+.principle-text { flex: 1; }
+.principle-text h3 { font-size: 9pt; color: #FFFFFF; margin: 0 0 1pt 0; }
+.principle-text p { font-size: 7pt; color: #999; margin: 0; }
+.takeaway { background: #251E40; padding: 8pt 10pt; border-radius: 3pt; border: 1pt solid #B165FB; margin-top: 4pt; }
+.takeaway h3 { font-size: 11pt; color: #B165FB; margin: 0 0 4pt 0; }
+.takeaway p { font-size: 8pt; color: #C0C0C0; margin: 2pt 0; }
+.resource { background: #1E2130; padding: 4pt 8pt; border-radius: 3pt; margin-bottom: 3pt; border-left: 2pt solid #40695B; }
+.resource p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+.resource .url { color: #58A6FF; }
+.footer { text-align: center; padding: 4pt; }
+.footer p { font-size: 9pt; color: #555; margin: 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>总结: 核心架构原则与学习路径</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>六大核心架构原则</h2>
+    <div class="principle">
+      <div class="num"><p>1</p></div>
+      <div class="principle-text"><h3>Skill 自动发现 > 显式调用</h3><p>CSO: Description 匹配, 按需加载全文</p></div>
+    </div>
+    <div class="principle">
+      <div class="num"><p>2</p></div>
+      <div class="principle-text"><h3>Subagent 隔离 > 共享会话</h3><p>独立上下文, Controller 精心构造输入</p></div>
+    </div>
+    <div class="principle">
+      <div class="num"><p>3</p></div>
+      <div class="principle-text"><h3>两阶段审查 > 单阶段</h3><p>先 Spec 再 Quality, 顺序不可换</p></div>
+    </div>
+    <div class="principle">
+      <div class="num"><p>4</p></div>
+      <div class="principle-text"><h3>Evidence > Claims</h3><p>无新鲜验证 = 不能声称完成</p></div>
+    </div>
+    <div class="principle">
+      <div class="num"><p>5</p></div>
+      <div class="principle-text"><h3>Rigid Disciplines 不可适应</h3><p>TDD/Debugging 精确遵循, 设计可灵活</p></div>
+    </div>
+    <div class="principle">
+      <div class="num"><p>6</p></div>
+      <div class="principle-text"><h3>Agents as Code 声明式定义</h3><p>Markdown = 可执行知识库</p></div>
+    </div>
+  </div>
+  <div class="right">
+    <div class="takeaway">
+      <h3>Key Takeaway</h3>
+      <p>Superpowers: 流程骨架 (How to do)</p>
+      <p>VoltAgent: 专家能力 (Who does it)</p>
+      <p>组合: 流程编排 + 领域专家 = 完整 AI 开发体系</p>
+      <p>Context Compression: Session -> Controller -> Subagent</p>
+    </div>
+    <h2>学习资源</h2>
+    <div class="resource">
+      <p><span class="url">github.com/obra/superpowers</span></p>
+      <p>Skills + Agents + Hooks + Docs</p>
+    </div>
+    <div class="resource">
+      <p><span class="url">github.com/VoltAgent/awesome-claude-code-subagents</span></p>
+      <p>127+ Agents + install-agents.sh</p>
+    </div>
+    <div class="resource">
+      <p><span class="url">ai-skills/AI-Skills-Guide.md</span></p>
+      <p>完整使用指南 + Mermaid 流程图</p>
+    </div>
+  </div>
+</div>
+<div class="footer"><p>AI Agent Skills Deep Dive | 2026.03</p></div>
+</body>
+</html>

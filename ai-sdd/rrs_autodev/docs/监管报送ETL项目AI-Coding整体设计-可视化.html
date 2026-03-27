@@ -1,0 +1,1217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>监管报送ETL项目 AI Coding 整体设计 — 四维运作视角</title>
+<style>
+  :root {
+    --primary: #1a73e8;
+    --primary-dark: #1557b0;
+    --dim1: #0d47a1;
+    --dim1-light: #e3f2fd;
+    --dim2: #e65100;
+    --dim2-light: #fff3e0;
+    --dim3: #2e7d32;
+    --dim3-light: #e8f5e9;
+    --dim4: #6a1b9a;
+    --dim4-light: #f3e5f5;
+    --bg: #f8f9fa;
+    --card-bg: #ffffff;
+    --text: #202124;
+    --text-secondary: #5f6368;
+    --border: #dadce0;
+    --shadow: 0 2px 8px rgba(0,0,0,0.08);
+    --shadow-lg: 0 4px 24px rgba(0,0,0,0.12);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+    background: #000;
+    color: var(--text);
+    overflow: hidden;
+    height: 100vh;
+  }
+
+  .slide-container {
+    width: 100vw;
+    height: 100vh;
+    position: relative;
+  }
+
+  .slide {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    display: none;
+    flex-direction: column;
+    background: var(--bg);
+    overflow-y: auto;
+    padding: 40px 60px;
+  }
+
+  .slide.active { display: flex; }
+
+  /* Title Slide */
+  .slide-title {
+    background: linear-gradient(135deg, #1a237e 0%, #0d47a1 40%, #1565c0 100%);
+    color: white;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .slide-title h1 { font-size: 42px; font-weight: 700; margin-bottom: 16px; letter-spacing: 2px; }
+  .slide-title .subtitle { font-size: 24px; opacity: 0.9; margin-bottom: 40px; }
+  .slide-title .meta { font-size: 16px; opacity: 0.7; }
+  .slide-title .four-dims {
+    display: flex; gap: 24px; margin-top: 48px; flex-wrap: wrap; justify-content: center;
+  }
+  .slide-title .dim-card {
+    background: rgba(255,255,255,0.12);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 20px 24px;
+    width: 200px;
+    backdrop-filter: blur(10px);
+    text-align: center;
+  }
+  .slide-title .dim-card .dim-num { font-size: 32px; font-weight: 700; }
+  .slide-title .dim-card .dim-name { font-size: 14px; margin-top: 8px; opacity: 0.9; }
+
+  /* Section header slides */
+  .slide-section {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+  }
+  .slide-section .chapter-num {
+    font-size: 18px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 4px;
+    margin-bottom: 16px;
+  }
+  .slide-section h2 {
+    font-size: 40px;
+    font-weight: 700;
+    margin-bottom: 12px;
+  }
+  .slide-section .section-desc {
+    font-size: 18px;
+    color: var(--text-secondary);
+    max-width: 600px;
+  }
+
+  /* Content slides */
+  .slide h2 {
+    font-size: 28px;
+    font-weight: 700;
+    margin-bottom: 24px;
+    color: var(--text);
+    padding-bottom: 12px;
+    border-bottom: 3px solid var(--primary);
+    flex-shrink: 0;
+  }
+  .slide h2 .dim-badge {
+    display: inline-block;
+    font-size: 13px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-left: 12px;
+    vertical-align: middle;
+    font-weight: 500;
+  }
+  .dim1-badge { background: var(--dim1-light); color: var(--dim1); }
+  .dim2-badge { background: var(--dim2-light); color: var(--dim2); }
+  .dim3-badge { background: var(--dim3-light); color: var(--dim3); }
+  .dim4-badge { background: var(--dim4-light); color: var(--dim4); }
+
+  .slide h3 {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 20px 0 10px;
+    color: var(--text);
+  }
+
+  .content { flex: 1; overflow-y: auto; }
+
+  /* Cards grid */
+  .cards { display: grid; gap: 16px; }
+  .cards-2 { grid-template-columns: 1fr 1fr; }
+  .cards-3 { grid-template-columns: 1fr 1fr 1fr; }
+  .cards-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+
+  .card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .card-header {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-header .icon { font-size: 24px; }
+  .card p, .card li {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.7;
+  }
+  .card ul { padding-left: 18px; }
+
+  .card.dim1 { border-left: 4px solid var(--dim1); }
+  .card.dim2 { border-left: 4px solid var(--dim2); }
+  .card.dim3 { border-left: 4px solid var(--dim3); }
+  .card.dim4 { border-left: 4px solid var(--dim4); }
+
+  /* Architecture diagram */
+  .arch-diagram {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 24px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    font-family: "SF Mono", "Cascadia Code", "Fira Code", monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    white-space: pre;
+    overflow-x: auto;
+    color: var(--text);
+  }
+
+  /* Flow diagram */
+  .flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 16px 0;
+  }
+  .flow-step {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 12px 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    text-align: center;
+    min-width: 120px;
+    position: relative;
+  }
+  .flow-step .step-num {
+    font-size: 11px;
+    color: white;
+    background: var(--primary);
+    border-radius: 50%;
+    width: 22px; height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+  .flow-step .step-title { font-size: 13px; font-weight: 600; }
+  .flow-step .step-desc { font-size: 11px; color: var(--text-secondary); }
+  .flow-arrow {
+    font-size: 20px;
+    color: var(--text-secondary);
+    padding: 0 4px;
+    flex-shrink: 0;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: var(--shadow);
+  }
+  th {
+    background: #f1f3f4;
+    padding: 10px 14px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  td {
+    padding: 10px 14px;
+    border-top: 1px solid var(--border);
+    vertical-align: top;
+  }
+  tr:hover td { background: #f8f9fa; }
+
+  /* Mapping table special */
+  .mapping-table th { text-align: center; }
+  .mapping-table td { text-align: center; font-size: 12px; }
+  .mapping-table td:first-child { text-align: left; font-weight: 600; }
+
+  /* Tag */
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .tag-done { background: #e8f5e9; color: #2e7d32; }
+  .tag-plan { background: #fff3e0; color: #e65100; }
+  .tag-p0 { background: #ffebee; color: #c62828; }
+  .tag-p1 { background: #fff3e0; color: #e65100; }
+  .tag-p2 { background: #e3f2fd; color: #1565c0; }
+
+  /* Timeline */
+  .timeline { position: relative; padding-left: 30px; }
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 10px; top: 0; bottom: 0;
+    width: 3px;
+    background: linear-gradient(to bottom, var(--dim1), var(--dim2), var(--dim3), var(--dim4));
+    border-radius: 2px;
+  }
+  .timeline-item {
+    position: relative;
+    margin-bottom: 20px;
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 16px 20px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .timeline-item::before {
+    content: '';
+    position: absolute;
+    left: -25px; top: 20px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    border: 3px solid var(--primary);
+    background: white;
+  }
+  .timeline-item .phase-title { font-weight: 700; font-size: 15px; margin-bottom: 6px; }
+  .timeline-item .phase-weeks { font-size: 12px; color: var(--text-secondary); }
+  .timeline-item ul { padding-left: 18px; margin-top: 8px; }
+  .timeline-item li { font-size: 13px; color: var(--text-secondary); line-height: 1.8; }
+
+  /* Layer stack */
+  .layer-stack { display: flex; flex-direction: column; gap: 2px; }
+  .layer {
+    display: flex;
+    align-items: center;
+    padding: 14px 20px;
+    border-radius: 8px;
+    color: white;
+    font-size: 14px;
+  }
+  .layer .layer-id { font-weight: 700; min-width: 120px; font-size: 15px; }
+  .layer .layer-content { flex: 1; opacity: 0.95; }
+  .layer-l5 { background: linear-gradient(90deg, #4a148c, #7b1fa2); }
+  .layer-l4 { background: linear-gradient(90deg, #1565c0, #1e88e5); }
+  .layer-l3 { background: linear-gradient(90deg, #2e7d32, #43a047); }
+  .layer-l2 { background: linear-gradient(90deg, #e65100, #ef6c00); }
+  .layer-l1 { background: linear-gradient(90deg, #37474f, #546e7a); }
+
+  /* Defense layers */
+  .defense-stack { display: flex; flex-direction: column; gap: 3px; }
+  .defense-layer {
+    padding: 14px 20px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+  }
+  .defense-layer .layer-label { font-weight: 700; min-width: 160px; }
+  .defense-layer .layer-items { flex: 1; font-size: 13px; }
+  .defense-layer .layer-effect { font-weight: 700; min-width: 100px; text-align: right; }
+  .defense-l1 { background: #e8f5e9; color: #1b5e20; }
+  .defense-l2 { background: #fff3e0; color: #e65100; }
+  .defense-l3 { background: #e3f2fd; color: #0d47a1; }
+  .defense-l4 { background: #fce4ec; color: #b71c1c; }
+
+  /* Agent tree */
+  .agent-tree {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+  }
+  .agent-row {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .agent-box {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 10px 16px;
+    box-shadow: var(--shadow);
+    border: 2px solid var(--border);
+    text-align: center;
+    min-width: 100px;
+  }
+  .agent-box .agent-name { font-size: 12px; font-weight: 700; }
+  .agent-box .agent-desc { font-size: 11px; color: var(--text-secondary); }
+  .agent-box.layer-req { border-color: var(--dim1); background: var(--dim1-light); }
+  .agent-box.layer-arch { border-color: var(--dim2); background: var(--dim2-light); }
+  .agent-box.layer-code { border-color: var(--dim3); background: var(--dim3-light); }
+  .agent-box.layer-biz { border-color: var(--dim4); background: var(--dim4-light); }
+  .tree-arrow { font-size: 18px; color: var(--text-secondary); }
+
+  /* Checkpoint flow */
+  .cp-flow {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .cp-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 16px;
+    background: var(--card-bg);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .cp-badge {
+    font-weight: 700;
+    font-size: 14px;
+    color: white;
+    background: var(--primary);
+    border-radius: 6px;
+    padding: 4px 10px;
+    min-width: 48px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .cp-content { flex: 1; }
+  .cp-content .cp-title { font-weight: 600; font-size: 13px; }
+  .cp-content .cp-desc { font-size: 12px; color: var(--text-secondary); }
+  .cp-reviewer {
+    font-size: 12px;
+    color: var(--primary);
+    font-weight: 500;
+    flex-shrink: 0;
+  }
+  .cp-arrow { text-align: center; color: var(--text-secondary); font-size: 14px; }
+
+  /* Collab channels */
+  .channel-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .channel-endpoint {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+    min-width: 180px;
+    text-align: center;
+  }
+  .channel-endpoint .ep-title { font-weight: 600; font-size: 13px; }
+  .channel-endpoint .ep-desc { font-size: 11px; color: var(--text-secondary); }
+  .channel-pipe {
+    flex: 1;
+    text-align: center;
+    font-size: 12px;
+    font-weight: 600;
+    padding: 8px;
+    border-radius: 20px;
+    color: white;
+  }
+
+  /* Navigation */
+  .nav {
+    position: fixed;
+    bottom: 0; left: 0; right: 0;
+    height: 56px;
+    background: rgba(255,255,255,0.95);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 24px;
+    z-index: 100;
+  }
+  .nav-btn {
+    border: none;
+    background: var(--primary);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 6px;
+    font-size: 14px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background 0.2s;
+  }
+  .nav-btn:hover { background: var(--primary-dark); }
+  .nav-btn:disabled { background: #dadce0; cursor: not-allowed; }
+  .nav-progress {
+    font-size: 13px;
+    color: var(--text-secondary);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .progress-bar {
+    width: 200px; height: 4px;
+    background: #e0e0e0;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%;
+    background: var(--primary);
+    transition: width 0.3s;
+    border-radius: 2px;
+  }
+
+  /* Slide padding for nav */
+  .slide { padding-bottom: 70px; }
+
+  /* Skill cards */
+  .skill-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 12px;
+  }
+  .skill-card {
+    background: var(--card-bg);
+    border-radius: 10px;
+    padding: 14px 16px;
+    box-shadow: var(--shadow);
+    border: 1px solid var(--border);
+  }
+  .skill-card .skill-name { font-weight: 700; font-size: 13px; color: var(--primary); }
+  .skill-card .skill-desc { font-size: 12px; color: var(--text-secondary); margin-top: 4px; }
+  .skill-card .skill-priority {
+    display: inline-block; margin-top: 6px; font-size: 11px;
+    padding: 2px 8px; border-radius: 4px; font-weight: 600;
+  }
+
+  /* Data flow annotated */
+  .data-flow-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    margin-bottom: 8px;
+  }
+  .data-flow-item .df-num {
+    font-weight: 700; font-size: 16px;
+    color: white; background: var(--primary);
+    border-radius: 50%; min-width: 28px; height: 28px;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; font-size: 13px;
+  }
+  .data-flow-item .df-content { flex: 1; }
+  .data-flow-item .df-action { font-weight: 600; font-size: 13px; }
+  .data-flow-item .df-detail { font-size: 12px; color: var(--text-secondary); }
+  .data-flow-item .df-dim {
+    font-size: 11px; padding: 2px 8px; border-radius: 4px;
+    font-weight: 500; flex-shrink: 0; align-self: center;
+  }
+
+  /* Metrics */
+  .metric-card {
+    text-align: center;
+    padding: 16px;
+  }
+  .metric-card .metric-value {
+    font-size: 28px; font-weight: 700; color: var(--primary);
+  }
+  .metric-card .metric-label {
+    font-size: 12px; color: var(--text-secondary); margin-top: 4px;
+  }
+
+  /* Two column layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+  @media (max-width: 900px) {
+    .cards-2, .cards-3, .cards-4, .two-col, .three-col {
+      grid-template-columns: 1fr;
+    }
+    .slide { padding: 20px 24px; }
+    .slide h2 { font-size: 22px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="slide-container">
+
+<!-- Slide 0: Title -->
+<div class="slide slide-title active" id="slide-0">
+  <h1>监管报送ETL项目 AI Coding 整体设计</h1>
+  <div class="subtitle">四维运作视角：谁在哪里做什么</div>
+  <div class="four-dims">
+    <div class="dim-card" style="border-color: rgba(33,150,243,0.6);">
+      <div class="dim-num">D1</div>
+      <div class="dim-name">开发者本地研发</div>
+    </div>
+    <div class="dim-card" style="border-color: rgba(255,152,0,0.6);">
+      <div class="dim-num">D2</div>
+      <div class="dim-name">Agentic Loop</div>
+    </div>
+    <div class="dim-card" style="border-color: rgba(76,175,80,0.6);">
+      <div class="dim-num">D3</div>
+      <div class="dim-name">AI Coding 服务端</div>
+    </div>
+    <div class="dim-card" style="border-color: rgba(156,39,176,0.6);">
+      <div class="dim-num">D4</div>
+      <div class="dim-name">远程与本地协同</div>
+    </div>
+  </div>
+  <div class="meta" style="margin-top: 32px;">v1.0 · 2026-03-04</div>
+</div>
+
+<!-- Slide 1: Why Four Dimensions -->
+<div class="slide" id="slide-1">
+  <h2>前言：为什么需要四维视角？</h2>
+  <div class="content">
+    <div class="two-col">
+      <div class="card">
+        <div class="card-header"><span class="icon">📦</span> 传统组件视角（What it is）</div>
+        <p>解释 Agent 是什么、Skill 是什么、Wiki 是什么……</p>
+        <p style="margin-top:10px; color:#c62828; font-weight:600;">难以回答：这套系统到底是怎么运作的？</p>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="icon">🔄</span> 四维运作视角（How it works）</div>
+        <p>从"谁在哪里做什么"重新组织整套体系</p>
+        <p style="margin-top:10px; color:#2e7d32; font-weight:600;">清晰展示端到端运作机制</p>
+      </div>
+    </div>
+    <h3 style="margin-top:28px;">四维视角 × 五层逻辑架构 映射表</h3>
+    <table class="mapping-table" style="margin-top:12px;">
+      <thead>
+        <tr>
+          <th>五层逻辑架构</th>
+          <th style="color:var(--dim1)">维度1 本地研发</th>
+          <th style="color:var(--dim2)">维度2 Agentic Loop</th>
+          <th style="color:var(--dim3)">维度3 服务端</th>
+          <th style="color:var(--dim4)">维度4 协同</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>L5 协作层</td><td>HITL检查点</td><td>Loop编排+自检</td><td>业务人员交互</td><td>双端同步</td></tr>
+        <tr><td>L4 记忆层</td><td>Wiki本地副本</td><td>文档流转载体</td><td>Mem0+向量DB</td><td>记忆/知识共享</td></tr>
+        <tr><td>L3 执行层</td><td>11个Agent+3个Skill</td><td>六阶段主流程</td><td>3个业务Agent</td><td>需求→开发联动</td></tr>
+        <tr><td>L2 规范层</td><td>CLAUDE.md+SDD模板</td><td>结构化文档规范</td><td>AGENTS.md配置</td><td>统一规范传播</td></tr>
+        <tr><td>L1 基础设施层</td><td>MCP Client+本地工具</td><td>Hook触发机制</td><td>MCP Server集群</td><td>网络通道</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Slide 2: Five Layer Architecture -->
+<div class="slide" id="slide-2">
+  <h2>第一章：五层逻辑架构</h2>
+  <div class="content">
+    <div class="layer-stack" style="max-width:800px; margin: 20px auto;">
+      <div class="layer layer-l5">
+        <span class="layer-id">L5 协作层</span>
+        <span class="layer-content">HITL检查点 · Multi-Agent编排 · 反馈闭环</span>
+      </div>
+      <div class="layer layer-l4">
+        <span class="layer-id">L4 记忆层</span>
+        <span class="layer-content">Wiki知识库 · Mem0长期记忆 · 会话上下文</span>
+      </div>
+      <div class="layer layer-l3">
+        <span class="layer-id">L3 执行层</span>
+        <span class="layer-content">11个开发Agent · 3个业务Agent · Skill工具 · Hook</span>
+      </div>
+      <div class="layer layer-l2">
+        <span class="layer-id">L2 规范层</span>
+        <span class="layer-content">CLAUDE.md · SDD规范模板 · AGENTS.md</span>
+      </div>
+      <div class="layer layer-l1">
+        <span class="layer-id">L1 基础设施层</span>
+        <span class="layer-content">MCP协议 · Hive/Spark · 平台API · 私有化LLM</span>
+      </div>
+    </div>
+    <div class="cards cards-2" style="margin-top:24px;">
+      <div class="card">
+        <div class="card-header">逻辑视角（静态）</div>
+        <p>描述系统由哪些组件构成，各层职责是什么</p>
+      </div>
+      <div class="card">
+        <div class="card-header">运作视角（动态）</div>
+        <p>描述系统如何运转，四个维度如何协同工作</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 3: End-to-End Data Flow -->
+<div class="slide" id="slide-3">
+  <h2>端到端数据流：从业务需求到生产上线</h2>
+  <div class="content" style="overflow-y:auto;">
+    <div class="data-flow-item"><div class="df-num">1</div><div class="df-content"><div class="df-action">业务人员在飞书发消息</div><div class="df-detail">"我想看上月渠道留存" → WebSocket转发</div></div><div class="df-dim dim3-badge">维度3</div></div>
+    <div class="data-flow-item"><div class="df-num">2</div><div class="df-content"><div class="df-action">AI Coding 服务端路由到 biz-analyst Agent</div><div class="df-detail">多轮对话 → 生成结构化需求规格书</div></div><div class="df-dim dim3-badge">维度3</div></div>
+    <div class="data-flow-item"><div class="df-num">3</div><div class="df-content"><div class="df-action">需求写入任务系统 → REQ-2026-xxxx</div><div class="df-detail">MCP Tool: create_task → Webhook通知</div></div><div class="df-dim dim4-badge">维度4</div></div>
+    <div class="data-flow-item"><div class="df-num">4</div><div class="df-content"><div class="df-action">开发者工作站 Claude Code 收到任务</div><div class="df-detail">加载 CLAUDE.md 规范 + SDD 模板</div></div><div class="df-dim dim1-badge">维度1</div></div>
+    <div class="data-flow-item"><div class="df-num">5</div><div class="df-content"><div class="df-action">Agentic Loop 启动</div><div class="df-detail">Requirement → Architecture → Sub Agents → Coding Agents</div></div><div class="df-dim dim2-badge">维度2</div></div>
+    <div class="data-flow-item"><div class="df-num">6</div><div class="df-content"><div class="df-action">git push → CI/CD 四阶段Pipeline</div><div class="df-detail">Lint → Test → Scan → Deploy，质量门禁通过</div></div><div class="df-dim dim2-badge">维度2</div></div>
+    <div class="data-flow-item"><div class="df-num">7</div><div class="df-content"><div class="df-action">Code Review (AI扫描 + 人工审查)</div><div class="df-detail">MR 合并到主分支</div></div><div class="df-dim dim1-badge">维度1</div></div>
+    <div class="data-flow-item"><div class="df-num">8</div><div class="df-content"><div class="df-action">CI/CD Webhook → 飞书进度播报</div><div class="df-detail">progress-tracker Agent → 飞书群</div></div><div class="df-dim dim4-badge">维度4</div></div>
+    <div class="data-flow-item"><div class="df-num">9</div><div class="df-content"><div class="df-action">业务人员确认上线 → 生产部署</div><div class="df-detail">WTSS调度注册 → Mem0写入记忆</div></div><div class="df-dim dim3-badge">维度3</div></div>
+  </div>
+</div>
+
+<!-- Slide 4: D1 - Agent System -->
+<div class="slide" id="slide-4">
+  <h2>维度1：三层11个Agent体系 <span class="dim-badge dim1-badge">开发者本地</span></h2>
+  <div class="content">
+    <div class="agent-tree">
+      <div style="font-size:13px; color:var(--text-secondary); margin-bottom:4px;">需求分析层（1个Agent）</div>
+      <div class="agent-row">
+        <div class="agent-box layer-req">
+          <div class="agent-name">Requirement Analyst</div>
+          <div class="agent-desc">需求理解·拆分·多轮确认</div>
+        </div>
+      </div>
+      <div class="tree-arrow">▼ 需求文档(.md)</div>
+      <div style="font-size:13px; color:var(--text-secondary);">架构设计层（5个Agent）</div>
+      <div class="agent-row">
+        <div class="agent-box layer-arch">
+          <div class="agent-name">Architecture Main</div>
+          <div class="agent-desc">主架构设计·拆分Step</div>
+        </div>
+      </div>
+      <div class="agent-row">
+        <div class="agent-box layer-arch"><div class="agent-name">Script</div><div class="agent-desc">ETL脚本设计</div></div>
+        <div class="agent-box layer-arch"><div class="agent-name">DDL</div><div class="agent-desc">表结构设计</div></div>
+        <div class="agent-box layer-arch"><div class="agent-name">WTSS</div><div class="agent-desc">调度配置</div></div>
+        <div class="agent-box layer-arch"><div class="agent-name">DQC</div><div class="agent-desc">质量规则</div></div>
+      </div>
+      <div class="tree-arrow">▼ 设计文档(.md)</div>
+      <div style="font-size:13px; color:var(--text-secondary);">代码生成层（5个Agent）</div>
+      <div class="agent-row">
+        <div class="agent-box layer-code"><div class="agent-name">HQL Coding</div><div class="agent-desc">SQL代码</div></div>
+        <div class="agent-box layer-code"><div class="agent-name">Blanca Coding</div><div class="agent-desc">ETL配置</div></div>
+        <div class="agent-box layer-code"><div class="agent-name">WTSS Coding</div><div class="agent-desc">调度作业</div></div>
+        <div class="agent-box layer-code"><div class="agent-name">DDL Coding</div><div class="agent-desc">建表DDL</div></div>
+        <div class="agent-box layer-code"><div class="agent-name">DQC Coding</div><div class="agent-desc">质量配置</div></div>
+      </div>
+    </div>
+    <div class="cards cards-3" style="margin-top:20px;">
+      <div class="card"><div class="card-header">上下文模式切换</div><p>通过斜杠命令触发，每次加载对应Agent的prompt和专属知识</p></div>
+      <div class="card"><div class="card-header">文档传递</div><p>Agent间不共享上下文，通过结构化Markdown文档传递信息</p></div>
+      <div class="card"><div class="card-header">人工可介入</div><p>信息传递可追溯、可审查，任何环节都能人工检查修改</p></div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 5: D1 - Skill System -->
+<div class="slide" id="slide-5">
+  <h2>维度1：Skill工具体系 <span class="dim-badge dim1-badge">开发者本地</span></h2>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <h3>已实现 — 基础层（3个）</h3>
+        <div class="skill-grid" style="margin-top:8px;">
+          <div class="skill-card" style="border-left:4px solid #2e7d32;">
+            <div class="skill-name">table-dependency-analyzer</div>
+            <div class="skill-desc">表级上下游依赖分析，支持多层深度，tree/json输出</div>
+            <div class="skill-priority tag-done">已实现</div>
+          </div>
+          <div class="skill-card" style="border-left:4px solid #2e7d32;">
+            <div class="skill-name">table-script-finder</div>
+            <div class="skill-desc">查找加工/使用某表的脚本，MySQL/API双模式</div>
+            <div class="skill-priority tag-done">已实现</div>
+          </div>
+          <div class="skill-card" style="border-left:4px solid #2e7d32;">
+            <div class="skill-name">wtss-dependency-analyzer</div>
+            <div class="skill-desc">WTSS作业依赖关系分析，1-10层，text/graph输出</div>
+            <div class="skill-priority tag-done">已实现</div>
+          </div>
+        </div>
+        <h3 style="margin-top:16px;">Skill设计原则</h3>
+        <ul style="font-size:13px; padding-left:18px; line-height:2;">
+          <li><b>借用现有平台能力</b>，不重复造轮子</li>
+          <li><b>关注代码搜索不准确的信息</b>（表血缘/调度依赖等）</li>
+          <li><b>按需加载</b>：metadata常驻 → body按需 → resources使用时</li>
+          <li><b>可组合性</b>：先查依赖 → 再找脚本 → 再读代码</li>
+        </ul>
+      </div>
+      <div>
+        <h3>规划中 — 领域层（8个）</h3>
+        <table style="margin-top:8px; font-size:12px;">
+          <thead><tr><th>优先级</th><th>Skill</th><th>价值</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag-p0">P0</span></td><td>hive-query</td><td>日常SQL核心，使用频率最高</td></tr>
+            <tr><td><span class="tag tag-p0">P0</span></td><td>spark-sql-optimization</td><td>性能问题是ETL最常见痛点</td></tr>
+            <tr><td><span class="tag tag-p1">P1</span></td><td>hive-storage</td><td>建表设计影响后续查询</td></tr>
+            <tr><td><span class="tag tag-p1">P1</span></td><td>hive-data-quality-sql</td><td>监管报送数据质量底线</td></tr>
+            <tr><td><span class="tag tag-p1">P1</span></td><td>spark-resource-tuning</td><td>月末季末跑批资源紧张</td></tr>
+            <tr><td><span class="tag tag-p2">P2</span></td><td>spark-batch-dev</td><td>Blanca封装大部分场景</td></tr>
+            <tr><td><span class="tag tag-p2">P2</span></td><td>hive-metastore-ops</td><td>Schema变更出错代价高</td></tr>
+            <tr><td><span class="tag tag-p2">P2</span></td><td>spark-troubleshooting</td><td>AI辅助缩短故障恢复</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 6: D1 - Wiki + Mem0 -->
+<div class="slide" id="slide-6">
+  <h2>维度1：Wiki知识库 + Mem0长期记忆 <span class="dim-badge dim1-badge">开发者本地</span></h2>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <div class="card dim1" style="height:100%;">
+          <div class="card-header"><span class="icon">📚</span> Wiki 知识库（显性知识）</div>
+          <p><b>入口</b>：knowledge_space.md → 按需深入阅读</p>
+          <ul style="margin-top:8px;">
+            <li><b>architecture/</b> — 数据流向、组件关系</li>
+            <li><b>business_spec/</b> — 业务口径、术语、监管要求</li>
+            <li><b>technical_spec/</b> — 编码规范、分层规范</li>
+            <li><b>core_components/</b> — BDP/WTSS/DQC 组件详解</li>
+            <li><b>data_assets/</b> — 表知识、码值映射、血缘</li>
+          </ul>
+          <p style="margin-top:10px; font-size:12px; color:var(--dim1);"><b>同步方式</b>：Git仓库管理，git pull获取最新</p>
+          <p style="font-size:12px; color:var(--dim1);"><b>自动更新</b>：Hook触发 → 提取知识点 → PR审查 → 合并</p>
+        </div>
+      </div>
+      <div>
+        <div class="card dim4" style="height:100%;">
+          <div class="card-header"><span class="icon">🧠</span> Mem0 长期记忆（隐性经验）</div>
+          <p><b>访问</b>：MCP → Mem0 API（向量检索）</p>
+          <div style="margin-top:10px;">
+            <p style="font-weight:600; font-size:13px;">写入时机</p>
+            <ul>
+              <li>需求完成后：记录需求、方案、反馈</li>
+              <li>遇到问题后：记录故障原因和解决方案</li>
+              <li>业务验收后：记录偏好和反馈意见</li>
+            </ul>
+          </div>
+          <div style="margin-top:10px;">
+            <p style="font-weight:600; font-size:13px;">读取时机</p>
+            <ul>
+              <li>新需求：检索历史相似需求经验</li>
+              <li>架构设计：参考类似技术方案</li>
+              <li>代码生成：复用已验证代码模式</li>
+            </ul>
+          </div>
+          <p style="margin-top:10px; font-size:12px; color:var(--dim4);"><b>共享范围</b>：开发者端 + 服务端共享（维度4）</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 7: D2 - Agentic Loop -->
+<div class="slide" id="slide-7">
+  <h2>维度2：Agentic Loop 核心模式 <span class="dim-badge dim2-badge">全自动化</span></h2>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <div class="card dim2" style="text-align:center; padding:28px;">
+          <div style="font-size:16px; font-weight:700; margin-bottom:16px;">Loop 核心循环</div>
+          <div style="display:flex; flex-direction:column; align-items:center; gap:8px;">
+            <div style="background:var(--dim2-light); padding:10px 24px; border-radius:8px; font-weight:600; color:var(--dim2);">外层编排器（斜杠命令触发）</div>
+            <div>▼</div>
+            <div style="display:flex; gap:12px; align-items:center;">
+              <div style="background:#e3f2fd; padding:10px 16px; border-radius:8px; text-align:center;">
+                <div style="font-weight:600; font-size:13px;">执行</div>
+                <div style="font-size:11px; color:var(--text-secondary);">Agent·Skill·Wiki</div>
+              </div>
+              <div>→</div>
+              <div style="background:#e8f5e9; padding:10px 16px; border-radius:8px; text-align:center;">
+                <div style="font-weight:600; font-size:13px;">自检</div>
+                <div style="font-size:11px; color:var(--text-secondary);">格式·依赖·规范</div>
+              </div>
+              <div>→</div>
+              <div style="background:#fff3e0; padding:10px 16px; border-radius:8px; text-align:center;">
+                <div style="font-weight:600; font-size:13px;">决策</div>
+                <div style="font-size:11px; color:var(--text-secondary);">通过？Y/N</div>
+              </div>
+            </div>
+            <div style="display:flex; gap:40px;">
+              <div style="text-align:center;"><div>↙ N</div><div style="background:#ffebee; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; color:#c62828;">纠错重试</div></div>
+              <div style="text-align:center;"><div>↘ Y</div><div style="background:#e8f5e9; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:600; color:#2e7d32;">下一步</div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <div class="cards" style="gap:10px;">
+          <div class="card">
+            <div class="card-header">自主性</div>
+            <p>Agent遇到问题自动纠错，不需每步人工干预</p>
+          </div>
+          <div class="card">
+            <div class="card-header">可观测性</div>
+            <p>每步输入输出都是结构化文档，可追溯、可审查</p>
+          </div>
+          <div class="card">
+            <div class="card-header">有界性</div>
+            <p>HITL检查点限定自主边界，关键决策人工确认</p>
+          </div>
+          <div class="card">
+            <div class="card-header">纠错边界</div>
+            <p>最多重试3次，超过则暂停Loop提示开发者介入</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 8: D2 - Six Stages -->
+<div class="slide" id="slide-8">
+  <h2>维度2：六阶段开发主流程 <span class="dim-badge dim2-badge">全自动化</span></h2>
+  <div class="content">
+    <div class="flow" style="flex-wrap:nowrap; overflow-x:auto; padding-bottom:10px;">
+      <div class="flow-step" style="border-top:3px solid var(--dim1);"><div class="step-num">1</div><div class="step-title">/requirement</div><div class="step-desc">需求分析</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-top:3px solid var(--dim1);"><div class="step-num">2</div><div class="step-title">/arch-main</div><div class="step-desc">主架构设计</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-top:3px solid var(--dim1);"><div class="step-num">3</div><div class="step-title">/arch-sub</div><div class="step-desc">子架构详设</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-top:3px solid var(--dim1);"><div class="step-num">4</div><div class="step-title">/coding</div><div class="step-desc">代码生成</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-top:3px solid var(--dim2);"><div class="step-num">5</div><div class="step-title">Review</div><div class="step-desc">CI/CD+审查</div></div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="border-top:3px solid var(--dim2);"><div class="step-num">6</div><div class="step-title">Deploy</div><div class="step-desc">部署上线</div></div>
+    </div>
+    <div class="cp-flow" style="margin-top:16px;">
+      <div class="cp-item"><div class="cp-badge" style="background:var(--dim1);">CP1</div><div class="cp-content"><div class="cp-title">需求确认</div><div class="cp-desc">指标定义、数据源、质量要求是否齐全</div></div><div class="cp-reviewer">业务分析师</div></div>
+      <div class="cp-arrow">▼</div>
+      <div class="cp-item"><div class="cp-badge" style="background:var(--dim1);">CP2</div><div class="cp-content"><div class="cp-title">方案审查</div><div class="cp-desc">数据模型、技术选型、风险评估</div></div><div class="cp-reviewer">技术负责人</div></div>
+      <div class="cp-arrow">▼</div>
+      <div class="cp-item"><div class="cp-badge" style="background:var(--dim1);">CP3</div><div class="cp-content"><div class="cp-title">设计确认</div><div class="cp-desc">逻辑正确性、边界条件、异常处理</div></div><div class="cp-reviewer">开发者</div></div>
+      <div class="cp-arrow">▼</div>
+      <div class="cp-item"><div class="cp-badge" style="background:var(--dim2);">CP4</div><div class="cp-content"><div class="cp-title">测试验证</div><div class="cp-desc">覆盖率、数据质量、回归测试</div></div><div class="cp-reviewer">Quality+开发者</div></div>
+      <div class="cp-arrow">▼</div>
+      <div class="cp-item"><div class="cp-badge" style="background:var(--dim2);">CP5</div><div class="cp-content"><div class="cp-title">代码审查</div><div class="cp-desc">规范符合性、安全隐患、性能问题</div></div><div class="cp-reviewer">Code Reviewer</div></div>
+      <div class="cp-arrow">▼</div>
+      <div class="cp-item"><div class="cp-badge" style="background:var(--dim2);">CP6</div><div class="cp-content"><div class="cp-title">部署验证</div><div class="cp-desc">调度配置、监控告警、回滚方案</div></div><div class="cp-reviewer">运维/开发者</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 9: D2 - Defense Layers -->
+<div class="slide" id="slide-9">
+  <h2>维度2：AI幻觉四层防御体系 <span class="dim-badge dim2-badge">全自动化</span></h2>
+  <div class="content">
+    <div class="defense-stack" style="max-width:850px; margin:20px auto;">
+      <div class="defense-layer defense-l1">
+        <span class="defense-label">Layer 1: 输入层防御</span>
+        <span class="defense-items">Wiki RAG增强 · CLAUDE.md规范约束 · Skill工具代替自由生成</span>
+        <span class="defense-effect">减少60-80%</span>
+      </div>
+      <div class="defense-layer defense-l2">
+        <span class="defense-label">Layer 2: 生成层防御</span>
+        <span class="defense-items">规范模板约束 · Few-shot示例引导 · 强制引用来源</span>
+        <span class="defense-effect">—</span>
+      </div>
+      <div class="defense-layer defense-l3">
+        <span class="defense-label">Layer 3: 输出层防御</span>
+        <span class="defense-items">SQL语法检查 · 单元测试验证 · 依赖项验证</span>
+        <span class="defense-effect">精度89.5%</span>
+      </div>
+      <div class="defense-layer defense-l4">
+        <span class="defense-label">Layer 4: 审查层防御</span>
+        <span class="defense-items">AI自动扫描 · Human代码审查 · 运行时监控</span>
+        <span class="defense-effect">组合96%+</span>
+      </div>
+    </div>
+    <div class="cards cards-2" style="margin-top:24px;">
+      <div class="card">
+        <div class="card-header">Loop内自我纠错</div>
+        <ul>
+          <li>SQL语法检查 → 解析错误 → 重新生成</li>
+          <li>JSON格式验证 → 补全缺失字段</li>
+          <li>依赖合法性 → Skill查询确认</li>
+          <li>规范一致性 → 对照CLAUDE.md自动重命名</li>
+          <li>完整性检查 → 识别缺失 → 补充生成</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">防御在Loop中的位置</div>
+        <ul>
+          <li><b>Layer 1</b> → 所有阶段的输入准备环节</li>
+          <li><b>Layer 2</b> → 阶段1-4的Agent生成环节</li>
+          <li><b>Layer 3</b> → 阶段4自检 + 阶段5 CI/CD</li>
+          <li><b>Layer 4</b> → CP1-CP6 六大检查点</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 10: D3 - Server -->
+<div class="slide" id="slide-10">
+  <h2>维度3：AI Coding 服务端 <span class="dim-badge dim3-badge">服务端</span></h2>
+  <div class="content">
+    <div class="card" style="margin-bottom:16px; background:#fff3e0; border-left:4px solid var(--dim2);">
+      <div class="card-header">痛点：需求在传递中失真</div>
+      <p>业务人员 → 口头描述 → 分析师翻译 → 工程师实现 → 验收不符 → 反复修改<br>
+      <b>三个问题</b>：信息衰减 · 等待成本 · 验收困难</p>
+    </div>
+    <div class="cards cards-3">
+      <div class="card dim3">
+        <div class="card-header"><span class="icon">💬</span> biz-analyst</div>
+        <p><b>需求分析师</b></p>
+        <p>飞书需求提报群 · 面向业务人员</p>
+        <p>多轮对话将模糊需求转化为结构化需求规格书</p>
+      </div>
+      <div class="card dim3">
+        <div class="card-header"><span class="icon">📊</span> data-advisor</div>
+        <p><b>数据顾问</b></p>
+        <p>飞书数据咨询群 · 面向业务人员</p>
+        <p>指标查询、数据解读、自助分析（只读不写）</p>
+      </div>
+      <div class="card dim3">
+        <div class="card-header"><span class="icon">📢</span> progress-tracker</div>
+        <p><b>进度跟踪</b></p>
+        <p>飞书项目进度群 · 面向全员</p>
+        <p>监听CP1-CP6，主动推送状态、验收通知</p>
+      </div>
+    </div>
+    <div class="cards cards-2" style="margin-top:16px;">
+      <div class="card">
+        <div class="card-header">技术选型：Claude Agent SDK（推荐）</div>
+        <ul>
+          <li>与Claude Code端Agent体系技术栈一致</li>
+          <li>原生支持MCP工具协议</li>
+          <li>Agent配置方式（AGENTS.md）统一</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-header">飞书接入：WebSocket长连接</div>
+        <ul>
+          <li>由内网服务器主动发起连接</li>
+          <li><b>无需公网IP</b>，无需开放入站端口</li>
+          <li>消息解析 → Agent路由 → Bot API回复</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 11: D4 - Collaboration -->
+<div class="slide" id="slide-11">
+  <h2>维度4：双端四通道协同 <span class="dim-badge dim4-badge">协同</span></h2>
+  <div class="content">
+    <div style="max-width:750px; margin:0 auto;">
+      <div class="channel-row">
+        <div class="channel-endpoint" style="border: 2px solid var(--dim1);"><div class="ep-title">开发者工作站</div><div class="ep-desc">Claude Code</div></div>
+        <div class="channel-pipe" style="background: var(--dim3);">① 需求流转<br><span style="font-size:11px; font-weight:400;">飞书→服务端→任务系统→工作站</span></div>
+        <div class="channel-endpoint" style="border: 2px solid var(--dim3);"><div class="ep-title">AI Coding 服务端</div><div class="ep-desc">Gateway + Agents</div></div>
+      </div>
+      <div class="channel-row">
+        <div class="channel-endpoint" style="border: 2px solid var(--dim1);"><div class="ep-title">CI/CD Pipeline</div><div class="ep-desc">质量门禁通过</div></div>
+        <div class="channel-pipe" style="background: var(--dim2);">② 进度同步<br><span style="font-size:11px; font-weight:400;">Webhook→服务端→飞书播报</span></div>
+        <div class="channel-endpoint" style="border: 2px solid var(--dim3);"><div class="ep-title">progress-tracker</div><div class="ep-desc">飞书进度群</div></div>
+      </div>
+      <div class="channel-row">
+        <div class="channel-endpoint" style="border: 2px solid var(--dim1);"><div class="ep-title">开发者 Agent</div><div class="ep-desc">技术方案·经验</div></div>
+        <div class="channel-pipe" style="background: var(--dim4);">③ 记忆共享<br><span style="font-size:11px; font-weight:400;">两端共用Mem0，双向可见</span></div>
+        <div class="channel-endpoint" style="border: 2px solid var(--dim3);"><div class="ep-title">服务端 Agent</div><div class="ep-desc">业务偏好·反馈</div></div>
+      </div>
+      <div class="channel-row">
+        <div class="channel-endpoint" style="border: 2px solid var(--dim1);"><div class="ep-title">Wiki (Git本地)</div><div class="ep-desc">文件直读</div></div>
+        <div class="channel-pipe" style="background: #546e7a;">④ 知识同步<br><span style="font-size:11px; font-weight:400;">Git仓库管理 + ChromaDB向量索引</span></div>
+        <div class="channel-endpoint" style="border: 2px solid var(--dim3);"><div class="ep-title">知识库 (向量DB)</div><div class="ep-desc">语义检索</div></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:20px; background:#f3e5f5; border-left:4px solid var(--dim4);">
+      <div class="card-header">业务验收反馈闭环</div>
+      <p>验收通过/拒绝 → Mem0写入反馈 → 下次类似需求AI自动参考 → 首次验收通过率持续提升</p>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 12: SDD + Security -->
+<div class="slide" id="slide-12">
+  <h2>第六章：SDD规范驱动 + 第七章：安全与合规</h2>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <h3>SDD：先规范后编码</h3>
+        <div class="flow" style="flex-direction:column; align-items:stretch; gap:8px; margin:12px 0;">
+          <div class="flow-step" style="border-left:4px solid var(--dim2); text-align:left; width:100%;">
+            <div class="step-title">1. 定义规范 (Specification)</div>
+            <div class="step-desc">明确"做什么"和"怎么做"</div>
+          </div>
+          <div style="text-align:center; color:var(--text-secondary);">▼</div>
+          <div class="flow-step" style="border-left:4px solid var(--dim2); text-align:left; width:100%;">
+            <div class="step-title">2. 设计架构 (Architecture)</div>
+            <div class="step-desc">确定技术方案和数据流</div>
+          </div>
+          <div style="text-align:center; color:var(--text-secondary);">▼</div>
+          <div class="flow-step" style="border-left:4px solid var(--dim2); text-align:left; width:100%;">
+            <div class="step-title">3. 生成代码 (Coding)</div>
+            <div class="step-desc">基于规范和架构自动生成</div>
+          </div>
+          <div style="text-align:center; color:var(--text-secondary);">▼</div>
+          <div class="flow-step" style="border-left:4px solid var(--dim2); text-align:left; width:100%;">
+            <div class="step-title">4. 验证质量 (Verification)</div>
+            <div class="step-desc">对照规范检查产出</div>
+          </div>
+        </div>
+        <p style="font-size:13px; color:var(--dim2); font-weight:600;">CLAUDE.md = 所有Agent共同遵守的项目宪法</p>
+      </div>
+      <div>
+        <h3>三道防线</h3>
+        <div class="cards" style="gap:10px; margin-top:12px;">
+          <div class="card" style="border-left:4px solid #2e7d32;">
+            <div class="card-header">第一道：网络隔离</div>
+            <ul><li>全链路内网运行</li><li>私有化LLM，数据零外泄</li><li>飞书WebSocket出站，无需公网IP</li></ul>
+          </div>
+          <div class="card" style="border-left:4px solid #e65100;">
+            <div class="card-header">第二道：访问控制</div>
+            <ul><li>开发者API Key认证</li><li>业务人员飞书白名单</li><li>平台API Token+IP白名单</li></ul>
+          </div>
+          <div class="card" style="border-left:4px solid #c62828;">
+            <div class="card-header">第三道：审计日志</div>
+            <ul><li>LLM调用全量日志（脱敏）</li><li>Git提交+MR审查记录</li><li>CI/CD Pipeline执行日志</li></ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 13: Roadmap -->
+<div class="slide" id="slide-13">
+  <h2>第八章：实施路线图</h2>
+  <div class="content">
+    <div class="two-col">
+      <div>
+        <div class="timeline">
+          <div class="timeline-item" style="border-left:3px solid var(--dim1);">
+            <div class="phase-title" style="color:var(--dim1);">Phase 1：维度1 — 本地研发能力</div>
+            <div class="phase-weeks">第1-4周</div>
+            <ul><li>部署私有化LLM</li><li>配置Claude Code + 11个Agent + 3个Skill</li><li>Wiki知识库初始化</li></ul>
+          </div>
+          <div class="timeline-item" style="border-left:3px solid var(--dim2);">
+            <div class="phase-title" style="color:var(--dim2);">Phase 2：维度2 — Agentic Loop 闭环</div>
+            <div class="phase-weeks">第5-8周</div>
+            <ul><li>四个斜杠命令全流程打通</li><li>Loop自检 + CI/CD Pipeline</li><li>3-5个真实需求端到端验证</li></ul>
+          </div>
+          <div class="timeline-item" style="border-left:3px solid var(--dim3);">
+            <div class="phase-title" style="color:var(--dim3);">Phase 3：维度3 — 服务端上线</div>
+            <div class="phase-weeks">第9-12周</div>
+            <ul><li>部署Gateway + 3个业务Agent</li><li>飞书Bot + WebSocket接入</li><li>飞书全链路打通</li></ul>
+          </div>
+          <div class="timeline-item" style="border-left:3px solid var(--dim4);">
+            <div class="phase-title" style="color:var(--dim4);">Phase 4：维度4 — 双端协同</div>
+            <div class="phase-weeks">第13-16周</div>
+            <ul><li>四通道全部打通</li><li>端到端全流程测试</li><li>安全审计和权限验证</li></ul>
+          </div>
+        </div>
+      </div>
+      <div>
+        <h3>核心度量指标</h3>
+        <div class="cards cards-2" style="gap:8px; margin-top:8px;">
+          <div class="card metric-card dim1"><div class="metric-value">-30%+</div><div class="metric-label">需求交付时间</div></div>
+          <div class="card metric-card dim1"><div class="metric-value">40-60%</div><div class="metric-label">AI辅助代码占比</div></div>
+          <div class="card metric-card dim2"><div class="metric-value">>70%</div><div class="metric-label">Loop完成率</div></div>
+          <div class="card metric-card dim2"><div class="metric-value">>90%</div><div class="metric-label">Review通过率</div></div>
+          <div class="card metric-card dim3"><div class="metric-value"><30min</div><div class="metric-label">需求接收时间</div></div>
+          <div class="card metric-card dim3"><div class="metric-value">>80%</div><div class="metric-label">首次验收通过</div></div>
+          <div class="card metric-card dim4"><div class="metric-value">>90%</div><div class="metric-label">流转自动化率</div></div>
+          <div class="card metric-card dim4"><div class="metric-value">>95%</div><div class="metric-label">进度播报及时率</div></div>
+        </div>
+        <h3 style="margin-top:16px;">主要风险</h3>
+        <table style="margin-top:8px; font-size:12px;">
+          <thead><tr><th>风险</th><th>应对</th></tr></thead>
+          <tbody>
+            <tr><td>团队抵触新流程</td><td>小团队试点，用数据证明</td></tr>
+            <tr><td>AI幻觉导致故障</td><td>四层防御+六大检查点</td></tr>
+            <tr><td>Wiki维护成本高</td><td>Hook自动沉淀机制</td></tr>
+            <tr><td>私有LLM性能瓶颈</td><td>GPU扩容+请求缓存</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Slide 14: Summary -->
+<div class="slide slide-title" id="slide-14" style="background: linear-gradient(135deg, #0d47a1 0%, #1565c0 50%, #1976d2 100%);">
+  <div class="subtitle" style="font-size:18px; opacity:0.8; margin-bottom:24px;">一句话总结</div>
+  <h1 style="font-size:28px; line-height:1.6; max-width:900px;">
+    通过"Agent分层协作 + Skill平台能力扩展 + Wiki知识注入"三位一体的架构，<br>
+    在 Agentic Loop 全自动化闭环 + Human-in-the-Loop 质量保障下，<br>
+    实现 <span style="color:#ffd54f;">业务需求 → 架构设计 → 代码生成 → 验收上线</span> 的全流程智能化
+  </h1>
+  <div class="four-dims" style="margin-top:40px;">
+    <div class="dim-card" style="border-color:rgba(33,150,243,0.6);"><div class="dim-num" style="font-size:24px;">D1</div><div class="dim-name">本地研发<br>11Agent + 3Skill + Wiki</div></div>
+    <div class="dim-card" style="border-color:rgba(255,152,0,0.6);"><div class="dim-num" style="font-size:24px;">D2</div><div class="dim-name">Agentic Loop<br>六阶段 + 6CP + 四层防御</div></div>
+    <div class="dim-card" style="border-color:rgba(76,175,80,0.6);"><div class="dim-num" style="font-size:24px;">D3</div><div class="dim-name">服务端<br>3业务Agent + 飞书接入</div></div>
+    <div class="dim-card" style="border-color:rgba(156,39,176,0.6);"><div class="dim-num" style="font-size:24px;">D4</div><div class="dim-name">协同<br>四通道 + 反馈闭环</div></div>
+  </div>
+  <div class="meta" style="margin-top:32px;">监管报送ETL项目 AI Coding 整体设计 · v1.0 · 2026-03-04</div>
+</div>
+
+</div><!-- /slide-container -->
+
+<!-- Navigation -->
+<div class="nav">
+  <button class="nav-btn" id="prevBtn" onclick="navigate(-1)">← 上一页</button>
+  <div class="nav-progress">
+    <span id="slideNum">1 / 15</span>
+    <div class="progress-bar"><div class="progress-bar-fill" id="progressFill" style="width:6.67%"></div></div>
+  </div>
+  <button class="nav-btn" id="nextBtn" onclick="navigate(1)">下一页 →</button>
+</div>
+
+<script>
+  const totalSlides = 15;
+  let currentSlide = 0;
+
+  function showSlide(n) {
+    document.querySelectorAll('.slide').forEach(s => s.classList.remove('active'));
+    document.getElementById('slide-' + n).classList.add('active');
+    document.getElementById('slideNum').textContent = (n + 1) + ' / ' + totalSlides;
+    document.getElementById('progressFill').style.width = ((n + 1) / totalSlides * 100) + '%';
+    document.getElementById('prevBtn').disabled = n === 0;
+    document.getElementById('nextBtn').disabled = n === totalSlides - 1;
+    currentSlide = n;
+  }
+
+  function navigate(dir) {
+    const next = currentSlide + dir;
+    if (next >= 0 && next < totalSlides) showSlide(next);
+  }
+
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ') { e.preventDefault(); navigate(1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); navigate(-1); }
+    if (e.key === 'Home') { e.preventDefault(); showSlide(0); }
+    if (e.key === 'End') { e.preventDefault(); showSlide(totalSlides - 1); }
+  });
+
+  // Touch support
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.changedTouches[0].screenX; });
+  document.addEventListener('touchend', e => {
+    const diff = touchStartX - e.changedTouches[0].screenX;
+    if (Math.abs(diff) > 50) navigate(diff > 0 ? 1 : -1);
+  });
+
+  showSlide(0);
+</script>
+
+</body>
+</html>

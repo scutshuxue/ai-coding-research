@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #40695B; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 12pt 24pt; gap: 14pt; flex: 1; }
+.left { flex: 1; }
+.right { flex: 1.2; }
+h2 { font-size: 13pt; color: #40695B; margin: 0 0 6pt 0; }
+.tier { margin-bottom: 8pt; }
+.tier-header { background: #251E40; padding: 5pt 10pt; border-radius: 4pt 4pt 0 0; }
+.tier-header p { font-size: 10pt; color: #B165FB; margin: 0; font-weight: bold; }
+.tier-body { background: #1E2130; padding: 6pt 10pt; border-radius: 0 0 4pt 4pt; }
+.tier-body p { font-size: 8pt; color: #C0C0C0; margin: 2pt 0; }
+.flow-box { background: #0D1117; padding: 8pt 10pt; border-radius: 4pt; border: 1pt solid #333; margin-top: 6pt; }
+.flow-box p { font-size: 8pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.comment { color: #8B949E !important; }
+.highlight { color: #D2A8FF !important; }
+.saga { background: #1E2130; padding: 8pt 12pt; border-radius: 4pt; border-left: 3pt solid #B165FB; margin-top: 6pt; }
+.saga h3 { font-size: 10pt; color: #B165FB; margin: 0 0 3pt 0; }
+.saga p { font-size: 8pt; color: #C0C0C0; margin: 2pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>VoltAgent 原理三: 元编排层 — 多代理协调架构</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>三层编排架构</h2>
+    <div class="tier">
+      <div class="tier-header"><p>顶层: multi-agent-coordinator</p></div>
+      <div class="tier-body">
+        <p>管理并发代理通信和同步</p>
+        <p>防止死锁和资源竞争</p>
+        <p>全局进度监控和异常处理</p>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-header"><p>核心编排层 (4 个代理)</p></div>
+      <div class="tier-body">
+        <p>agent-organizer: 任务分解 + 代理选择</p>
+        <p>workflow-orchestrator: 状态机 + 错误恢复</p>
+        <p>task-distributor: 负载均衡 + 优先级调度</p>
+        <p>context-manager: 共享状态 + 版本控制</p>
+      </div>
+    </div>
+    <div class="tier">
+      <div class="tier-header"><p>支撑编排层 (3 个代理)</p></div>
+      <div class="tier-body">
+        <p>error-coordinator: 30 秒内检测故障 + 关联分析</p>
+        <p>performance-monitor: 延迟/吞吐量/成功率</p>
+        <p>knowledge-synthesizer: 从流程学习更新知识库</p>
+      </div>
+    </div>
+  </div>
+  <div class="right">
+    <h2>运行时协调示例</h2>
+    <div class="flow-box">
+      <p class="comment">// 场景: 实现用户认证系统</p>
+      <p></p>
+      <p class="highlight">T0: agent-organizer</p>
+      <p>  任务分解 -> DAG 依赖图:</p>
+      <p>  api-designer (无依赖)</p>
+      <p>  security-auditor (依赖 api-designer)</p>
+      <p>  fullstack-dev (依赖 api + security)</p>
+      <p>  qa-expert (依赖 fullstack)</p>
+      <p></p>
+      <p class="highlight">T1: task-distributor</p>
+      <p>  策略: parallel_first_wave</p>
+      <p>  Wave 1: api-designer (并行)</p>
+      <p>  Wave 2: security-auditor (等 Wave 1)</p>
+      <p>  Wave 3: fullstack-dev (等 Wave 2)</p>
+      <p></p>
+      <p class="highlight">T2-T10: multi-agent-coordinator</p>
+      <p>  监控: 完成事件 / 错误 / 性能异常</p>
+      <p>  状态同步到 context-manager</p>
+    </div>
+    <div class="saga">
+      <h3>Saga 模式 (workflow-orchestrator)</h3>
+      <p>每步操作都有补偿事务</p>
+      <p>失败时自动回滚到上一个检查点</p>
+      <p>通知依赖的后续任务延迟</p>
+      <p>[开始] -> [设计] -> [验证] -> [实现] -> [测试] -> [完成]</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #40695B; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 8pt 24pt; gap: 14pt; flex: 1; }
+.left { flex: 1; }
+.right { flex: 1; }
+h2 { font-size: 12pt; color: #40695B; margin: 0 0 4pt 0; }
+h3 { font-size: 10pt; color: #B165FB; margin: 6pt 0 2pt 0; }
+.code-box { background: #0D1117; padding: 5pt 8pt; border-radius: 3pt; border: 1pt solid #333; margin-bottom: 4pt; }
+.code-box p { font-size: 8pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.comment { color: #8B949E !important; }
+.section { background: #1E2130; padding: 5pt 8pt; border-radius: 3pt; margin-bottom: 4pt; border-left: 2pt solid #40695B; }
+.section p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+.priority { display: flex; gap: 6pt; margin-top: 4pt; margin-bottom: 6pt; }
+.pri-item { flex: 1; text-align: center; padding: 5pt; border-radius: 3pt; }
+.pri-high { background: #251E40; border: 1pt solid #B165FB; }
+.pri-low { background: #1E2130; border: 1pt solid #333; }
+.pri-item h3 { font-size: 9pt; color: #B165FB; margin: 0 0 2pt 0; }
+.pri-item p { font-size: 7pt; color: #999; margin: 1pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>实践: 安装部署与使用场景</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>Superpowers 安装</h2>
+    <h3>插件市场 (推荐)</h3>
+    <div class="code-box"><p>claude install obra/superpowers</p></div>
+    <h3>手动链接</h3>
+    <div class="code-box">
+      <p>ln -s path/superpowers/skills .claude/skills</p>
+      <p>ln -s path/superpowers/agents .claude/agents</p>
+    </div>
+    <h2>VoltAgent 安装</h2>
+    <h3>交互式安装器</h3>
+    <div class="code-box">
+      <p>cd awesome-claude-code-subagents</p>
+      <p>./install-agents.sh</p>
+    </div>
+    <h3>按需安装</h3>
+    <div class="code-box">
+      <p>cp categories/04-quality-security/</p>
+      <p>   security-auditor.md ~/.claude/agents/</p>
+    </div>
+  </div>
+  <div class="right">
+    <h2>安装位置与优先级</h2>
+    <div class="priority">
+      <div class="pri-item pri-high">
+        <h3>.claude/agents/</h3>
+        <p>项目级 | 优先级高</p>
+      </div>
+      <div class="pri-item pri-low">
+        <h3>~/.claude/agents/</h3>
+        <p>全局级 | 优先级低</p>
+      </div>
+    </div>
+    <div class="section"><p>同名代理: 项目级覆盖全局级</p></div>
+    <h2>推荐使用场景</h2>
+    <div class="section">
+      <p>新功能开发 -> Superpowers 全流程</p>
+      <p>brainstorming -> plan -> subagent-driven-dev</p>
+    </div>
+    <div class="section">
+      <p>专项任务 -> VoltAgent 专家代理</p>
+      <p>安全审计 / Docker 优化 / API 设计</p>
+    </div>
+    <div class="section">
+      <p>组合使用 -> Superpowers 编排 + VoltAgent 执行</p>
+      <p>subagent-driven-dev 中调度 VoltAgent 专家</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

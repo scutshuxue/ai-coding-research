@@ -1,0 +1,27 @@
+[submodule "ai-memory/cortex-mem"]
+	path = ai-memory/cortex-mem
+	url = git@github.com:sopaco/cortex-mem.git
+[submodule "ai-memory/Personal_AI_Infrastructure"]
+	path = ai-memory/Personal_AI_Infrastructure
+	url = git@github.com:danielmiessler/Personal_AI_Infrastructure.git
+[submodule "ai-writing/creative-writing-skills"]
+	path = ai-writing/creative-writing-skills
+	url = https://github.com/haowjy/creative-writing-skills.git
+[submodule "ai-skills/gstack"]
+	path = ai-skills/gstack
+	url = https://github.com/garrytan/gstack.git
+[submodule "ai-skills/awesome-claude-code-subagents"]
+	path = ai-skills/awesome-claude-code-subagents
+	url = https://github.com/VoltAgent/awesome-claude-code-subagents.git
+[submodule "ai-skills/superpowers"]
+	path = ai-skills/superpowers
+	url = https://github.com/obra/superpowers.git
+[submodule "rrs_autotest"]
+	path = rrs_autotest
+	url = git@github.com:scutshuxue/rrs_autotest.git
+[submodule "ai-sdd/ai-plugin-market"]
+	path = ai-sdd/ai-plugin-market
+	url = git@github.com:WeTechHK/ai-plugin-market.git
+[submodule "ai-sdd/AI-SDD-template"]
+	path = ai-sdd/AI-SDD-template
+	url = git@github.com:WeTechHK/AI-SDD-template.git

@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 10pt 24pt; gap: 16pt; flex: 1; }
+.left { flex: 1.2; }
+.right { flex: 1; }
+h2 { font-size: 15pt; color: #B165FB; margin: 0 0 10pt 0; }
+.flow { display: flex; flex-direction: column; gap: 6pt; }
+.step { background: #1E2130; padding: 5pt 10pt; border-radius: 4pt; border-left: 3pt solid #40695B; }
+.step p { font-size: 9pt; color: #C0C0C0; margin: 1pt 0; }
+.step-num { font-size: 10pt; color: #B165FB; font-weight: bold; }
+.arrow { text-align: center; }
+.arrow p { font-size: 12pt; color: #555; margin: 2pt 0; }
+.code-box { background: #0D1117; padding: 6pt; border-radius: 4pt; margin-top: 4pt; border: 1pt solid #333; }
+.code-box p { font-size: 8pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.bad { color: #F85149 !important; }
+.good { color: #7EE787 !important; }
+.warn { background: #2A1A1A; border-left: 3pt solid #F85149; padding: 5pt 10pt; border-radius: 4pt; margin-top: 4pt; }
+.warn p { font-size: 8pt; color: #F85149; margin: 1pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>原理一: Skill 触发机制 — Claude Search Optimization (CSO)</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>触发链路</h2>
+    <div class="flow">
+      <div class="step"><p><span class="step-num">Step 1</span>  用户输入消息</p></div>
+      <div class="arrow"><p>|</p></div>
+      <div class="step"><p><span class="step-num">Step 2</span>  Claude 扫描所有 skill 的 description 字段</p><p>匹配关键词: 错误消息、症状、工具名、文件类型</p></div>
+      <div class="arrow"><p>|</p></div>
+      <div class="step"><p><span class="step-num">Step 3</span>  匹配度 >= 1% 即加载该 Skill 完整内容</p></div>
+      <div class="arrow"><p>|</p></div>
+      <div class="step"><p><span class="step-num">Step 4</span>  Skill 内容优先级 > 默认 System Prompt</p></div>
+      <div class="arrow"><p>|</p></div>
+      <div class="step"><p><span class="step-num">Step 5</span>  User 指令最高优先级（可覆盖 Skill）</p></div>
+    </div>
+  </div>
+  <div class="right">
+    <h2>Frontmatter 规范</h2>
+    <div class="code-box">
+      <p>---</p>
+      <p>name: subagent-driven-development</p>
+      <p>description: Use when executing</p>
+      <p>  implementation plans with</p>
+      <p>  independent tasks</p>
+      <p>---</p>
+    </div>
+    <h2>Description 的黄金法则</h2>
+    <div class="code-box">
+      <p class="bad">BAD: "dispatches subagent per task</p>
+      <p class="bad">  with code review between tasks"</p>
+      <p class="bad">  (工作流摘要 -> Claude 走捷径)</p>
+      <p></p>
+      <p class="good">GOOD: "Use when executing plans</p>
+      <p class="good">  with independent tasks"</p>
+      <p class="good">  (纯触发条件 -> 正确加载全文)</p>
+    </div>
+    <div class="warn">
+      <p>Description 只描述 WHEN，不描述 HOW</p>
+      <p>否则 Claude 会从摘要取捷径</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

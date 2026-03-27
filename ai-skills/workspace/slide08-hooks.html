@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 8pt 24pt; gap: 14pt; flex: 1; }
+.left { flex: 1; }
+.right { flex: 1; }
+h2 { font-size: 12pt; color: #B165FB; margin: 0 0 4pt 0; }
+.flow { display: flex; flex-direction: column; gap: 2pt; }
+.step { background: #1E2130; padding: 4pt 8pt; border-radius: 3pt; border-left: 2pt solid #40695B; }
+.step p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+.step-active { border-left: 2pt solid #B165FB; background: #251E40; }
+.arr p { font-size: 8pt; color: #555; margin: 0 0 0 8pt; }
+.code-box { background: #0D1117; padding: 5pt 8pt; border-radius: 3pt; border: 1pt solid #333; margin-top: 4pt; }
+.code-box p { font-size: 7pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.comment { color: #8B949E !important; }
+.insight { background: #1E2130; padding: 5pt 8pt; border-radius: 3pt; border-left: 2pt solid #40695B; margin-bottom: 4pt; }
+.insight h3 { font-size: 9pt; color: #40695B; margin: 0 0 2pt 0; }
+.insight p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; }
+.platform { display: flex; gap: 4pt; margin-top: 4pt; }
+.plat { flex: 1; background: #1E2130; padding: 4pt 6pt; border-radius: 3pt; text-align: center; }
+.plat p { font-size: 7pt; color: #999; margin: 1pt 0; }
+.plat h3 { font-size: 9pt; color: #B165FB; margin: 0 0 1pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>原理六: Hook 系统与 Git Worktree 隔离</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>SessionStart Hook 工作流</h2>
+    <div class="flow">
+      <div class="step"><p>1. 检查遗留目录 (~/.config/superpowers/)</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="step step-active"><p>2. 读取 using-superpowers SKILL.md</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="step"><p>3. JSON 转义 (Bash parameter substitution)</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="step"><p>4. 构造 context (EXTREMELY_IMPORTANT 前缀)</p></div>
+      <div class="arr"><p>|</p></div>
+      <div class="step"><p>5. 平台感知输出 (Cursor/Claude Code/fallback)</p></div>
+    </div>
+    <div class="code-box">
+      <p class="comment"># Bash 5.3+ heredoc 大变量挂起 -> printf</p>
+      <p>printf '{"field": "%s"}' "$variable"</p>
+      <p class="comment"># 只有一个 Hook: 其他 Skill 通过 CSO 按需加载</p>
+    </div>
+  </div>
+  <div class="right">
+    <h2>Git Worktree 隔离策略</h2>
+    <div class="insight">
+      <h3>目录选择优先级</h3>
+      <p>1. .worktrees/ (推荐) 2. worktrees/ 3. CLAUDE.md 配置 4. 询问用户</p>
+    </div>
+    <div class="insight">
+      <h3>安全验证</h3>
+      <p>创建前必须验证 .gitignore 包含 worktree 目录</p>
+      <p>若未忽略: 先加 .gitignore -> 提交 -> 再创建</p>
+    </div>
+    <div class="insight">
+      <h3>自动环境检测</h3>
+      <p>package.json -> npm install | Cargo.toml -> cargo build</p>
+      <p>requirements.txt -> pip install | 运行测试验证 baseline</p>
+    </div>
+    <h2>多平台适配</h2>
+    <div class="platform">
+      <div class="plat"><h3>Claude Code</h3><p>hookSpecificOutput</p></div>
+      <div class="plat"><h3>Cursor</h3><p>camelCase hooks</p></div>
+      <div class="plat"><h3>Gemini</h3><p>Extension JSON</p></div>
+      <div class="plat"><h3>Codex</h3><p>Manual Setup</p></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

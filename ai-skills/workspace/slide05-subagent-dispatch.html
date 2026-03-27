@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 10pt 24pt; gap: 14pt; flex: 1; }
+.left { flex: 1.3; }
+.right { flex: 1; }
+h2 { font-size: 13pt; color: #B165FB; margin: 0 0 6pt 0; }
+.layer { background: #1E2130; padding: 5pt 10pt; border-radius: 4pt; margin-bottom: 4pt; border-left: 3pt solid #40695B; }
+.layer-num { font-size: 9pt; color: #B165FB; font-weight: bold; }
+.layer p { font-size: 8pt; color: #C0C0C0; margin: 1pt 0; line-height: 1.3; }
+.layer-highlight { border-left: 3pt solid #B165FB; background: #251E40; }
+.context-box { background: #0D1117; padding: 6pt 8pt; border-radius: 4pt; border: 1pt solid #333; margin-bottom: 6pt; }
+.context-box p { font-size: 8pt; color: #7EE787; margin: 1pt 0; font-family: Courier New, monospace; }
+.context-box .comment { color: #8B949E; }
+.context-box ul { margin: 1pt 0 1pt 12pt; padding: 0; }
+.context-box li { font-size: 8pt; color: #7EE787; font-family: Courier New, monospace; margin: 0; }
+.principle { background: #1A2A20; padding: 6pt 10pt; border-radius: 4pt; margin-top: 4pt; }
+.principle p { font-size: 8pt; color: #7EE787; margin: 2pt 0; }
+</style>
+</head>
+<body>
+<div class="header"><h1>原理三: 子代理派遣模式 — 四层架构</h1></div>
+<div class="main">
+  <div class="left">
+    <h2>四层审查架构</h2>
+    <div class="layer layer-highlight">
+      <p><span class="layer-num">Layer 1: Implementer</span></p>
+      <p>输入: Task 完整文本 (不是文件路径)</p>
+      <p>工作: 实现 + TDD + 自审</p>
+      <p>输出: DONE / DONE_WITH_CONCERNS / NEEDS_CONTEXT / BLOCKED</p>
+    </div>
+    <div class="layer">
+      <p><span class="layer-num">Layer 2: Spec Reviewer</span></p>
+      <p>原则: 怀疑 Implementer 报告, 代码比报告可信</p>
+      <p>检查: 遗漏需求 / 额外功能 / 误解释</p>
+    </div>
+    <div class="layer">
+      <p><span class="layer-num">Layer 3: Code Quality Reviewer</span></p>
+      <p>触发: Spec 审查通过后</p>
+      <p>检查: 代码质量 / SOLID / 测试覆盖 / 文件分解</p>
+    </div>
+    <div class="layer">
+      <p><span class="layer-num">Layer 4: Final Code Reviewer</span></p>
+      <p>触发: 所有任务完成后, 跨文件一致性</p>
+    </div>
+  </div>
+  <div class="right">
+    <h2>上下文隔离设计</h2>
+    <div class="context-box">
+      <p class="comment">// Controller 精心构造输入</p>
+      <p>Implementer 输入:</p>
+      <ul><li>Task 完整文本</li><li>场景设定 (位置/依赖)</li><li>架构上下文</li></ul>
+      <p>Spec Reviewer 输入:</p>
+      <ul><li>完整需求 + 实现代码</li><li>(无会话历史)</li></ul>
+      <p>Quality Reviewer 输入:</p>
+      <ul><li>git diff + 计划</li><li>(无实现思考过程)</li></ul>
+    </div>
+    <div class="principle">
+      <p>核心: 每个子代理 = 新上下文空间</p>
+      <p>不继承历史 -> 避免 Path Dependency</p>
+      <p>Controller 构造输入 > 子代理自读文件</p>
+      <p>禁止多子代理并行编辑同一文件</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>

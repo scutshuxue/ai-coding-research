@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+html { background: #181B24; }
+body {
+  width: 720pt; height: 405pt; margin: 0; padding: 0;
+  font-family: Arial, sans-serif; display: flex; flex-direction: column;
+  background: #181B24; color: #FFFFFF;
+}
+.header { background: #B165FB; padding: 14pt 30pt; }
+.header h1 { font-size: 22pt; color: #FFFFFF; margin: 0; }
+.main { display: flex; padding: 14pt 24pt; gap: 16pt; flex: 1; }
+.left { flex: 1; }
+.right { flex: 1; }
+h2 { font-size: 14pt; color: #B165FB; margin: 0 0 8pt 0; }
+.cycle { display: flex; gap: 8pt; margin-bottom: 12pt; }
+.cycle-step { flex: 1; padding: 12pt; border-radius: 4pt; text-align: center; }
+.red { background: #3B1A1A; border: 2pt solid #F85149; }
+.red h3 { font-size: 14pt; color: #F85149; margin: 0 0 4pt 0; }
+.red p { font-size: 9pt; color: #F8969C; margin: 2pt 0; }
+.green { background: #1A2A1A; border: 2pt solid #3FB950; }
+.green h3 { font-size: 14pt; color: #3FB950; margin: 0 0 4pt 0; }
+.green p { font-size: 9pt; color: #7EE787; margin: 2pt 0; }
+.refactor { background: #1A1A2A; border: 2pt solid #58A6FF; }
+.refactor h3 { font-size: 14pt; color: #58A6FF; margin: 0 0 4pt 0; }
+.refactor p { font-size: 9pt; color: #79C0FF; margin: 2pt 0; }
+.excuse-table { width: 100%; }
+.excuse-row { display: flex; margin-bottom: 3pt; }
+.excuse { flex: 1; background: #2A1A1A; padding: 5pt 8pt; border-radius: 3pt; }
+.excuse p { font-size: 8pt; color: #F85149; margin: 1pt 0; }
+.reality { flex: 1.2; background: #1A2A1A; padding: 5pt 8pt; border-radius: 3pt; margin-left: 4pt; }
+.reality p { font-size: 8pt; color: #3FB950; margin: 1pt 0; }
+.red-flag { background: #2A1A1A; padding: 8pt 12pt; border-radius: 4pt; border-left: 3pt solid #F85149; margin-top: 8pt; }
+.red-flag p { font-size: 9pt; color: #F8969C; margin: 2pt 0; }
+.iron { background: #251E40; padding: 10pt; border-radius: 4pt; border: 2pt solid #B165FB; text-align: center; margin-bottom: 8pt; }
+.iron p { font-size: 11pt; color: #B165FB; margin: 0; font-weight: bold; }
+</style>
+</head>
+<body>
+<div class="header"><h1>原理五: TDD 强制执行 — Rigid Discipline Skill</h1></div>
+<div class="main">
+  <div class="left">
+    <div class="iron"><p>NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST</p></div>
+    <h2>RED-GREEN-REFACTOR 循环</h2>
+    <div class="cycle">
+      <div class="cycle-step red">
+        <h3>RED</h3>
+        <p>写失败测试</p>
+        <p>必须看到失败</p>
+      </div>
+      <div class="cycle-step green">
+        <h3>GREEN</h3>
+        <p>写最小代码</p>
+        <p>必须看到通过</p>
+      </div>
+      <div class="cycle-step refactor">
+        <h3>REFACTOR</h3>
+        <p>清理重构</p>
+        <p>保持测试绿色</p>
+      </div>
+    </div>
+    <h2>Rigid vs Flexible Skills</h2>
+    <div class="red-flag">
+      <p>Rigid (TDD/Debugging): 必须精确遵循，不可调整</p>
+      <p>Flexible (设计/规划): 可根据上下文适应</p>
+      <p>TDD 属于 Rigid — 违反字面即违反精神</p>
+    </div>
+  </div>
+  <div class="right">
+    <h2>Rationalization Table (借口粉碎表)</h2>
+    <div class="excuse-table">
+      <div class="excuse-row">
+        <div class="excuse"><p>"太简单不需要测试"</p></div>
+        <div class="reality"><p>简单代码也会崩。测试只需 30 秒。</p></div>
+      </div>
+      <div class="excuse-row">
+        <div class="excuse"><p>"写完再测"</p></div>
+        <div class="reality"><p>测试直接通过 = 证明不了什么。</p></div>
+      </div>
+      <div class="excuse-row">
+        <div class="excuse"><p>"保留做参考"</p></div>
+        <div class="reality"><p>你会改它。Delete 就是 DELETE。</p></div>
+      </div>
+      <div class="excuse-row">
+        <div class="excuse"><p>"手动测过了"</p></div>
+        <div class="reality"><p>删除代码。从 TDD 重新开始。</p></div>
+      </div>
+      <div class="excuse-row">
+        <div class="excuse"><p>"这次情况不同"</p></div>
+        <div class="reality"><p>不同 = 更需要测试。</p></div>
+      </div>
+      <div class="excuse-row">
+        <div class="excuse"><p>"重要的是精神"</p></div>
+        <div class="reality"><p>违反字面规则 = 违反精神。</p></div>
+      </div>
+    </div>
+    <div class="red-flag">
+      <p>三道防线: Rationalization Table + Red Flags List + 绝对要求</p>
+      <p>所有借口的答案: 删除代码，从 TDD 重新开始</p>
+    </div>
+  </div>
+</div>
+</body>
+</html>
