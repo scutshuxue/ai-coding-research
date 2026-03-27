@@ -1,39 +1,95 @@
 # CLAUDE.md
 
-本文件为 Claude Code (claude.ai/code) 在本仓库中工作提供指导。
-
-## 项目概览
-
-这是一个多项目工作区，包含四个独立子项目，涵盖 AI 记忆系统、规范驱动开发工作流和监管报送自动化测试。
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
 ## 语言要求
 
 - 使用**中文**进行所有对话和解释
 
+## 项目概览
+
+AI Coding Research 多项目工作区，通过 Git Submodules 聚合 AI 记忆系统、规范驱动开发、技能集合、创意写作和监管报送自动化测试等项目。
+
+## 子模块管理
+
+本仓库所有子项目均以 Git Submodule 方式引入，详见 [SUBMODULES.md](SUBMODULES.md)。
+
+```bash
+# 首次克隆（含子模块）
+git clone --recurse-submodules git@github.com:scutshuxue/ai-coding-research.git
+
+# 已克隆后初始化子模块
+git submodule init && git submodule update
+
+# 更新所有子模块到远程最新
+git submodule update --remote --merge
+
+# 更新单个子模块
+git submodule update --remote --merge <子模块路径>
+
+# 添加新子模块
+git submodule add <仓库URL> <本地路径>
+
+# 查看子模块状态
+git submodule status
+```
+
 ## 工作区结构
 
-### ai-memory/
+### ai-memory/ — AI 记忆系统
 
-包含两个独立的 AI 记忆系统项目：
+| 子模块 | 技术栈 | 说明 |
+|--------|--------|------|
+| `Personal_AI_Infrastructure/` (PAI) | TypeScript, Bun | 个人 AI 平台，完整 `.claude/` 配置（hooks、skills、agents、记忆）。安装到 `~/.claude/` |
+| `cortex-mem/` | Rust 1.86+, edition 2024 | 三层记忆框架（L0→L1→L2），7 个 workspace crate |
 
-- **Personal_AI_Infrastructure/** (PAI) — 基于 Claude Code 构建的个人 AI 平台。`Releases/` 下包含多个版本（v2.3 至 v4.0.3），每个版本是完整的 `.claude/` 目录，含 hooks、skills、agents、记忆系统和可观测性工具。技术栈：TypeScript、Bun。安装目标为 `~/.claude/`。
-- **cortex-mem/** — 基于 Rust 的 AI 记忆框架，采用三层层级架构（L0 抽象 → L1 概览 → L2 详情）。Workspace 包含 7 个 crate：`cortex-mem-core`、`cortex-mem-config`、`cortex-mem-tools`、`cortex-mem-rig`、`cortex-mem-service`、`cortex-mem-cli`、`cortex-mem-mcp`。要求 Rust 1.86+，edition 2024。
+本地文档：`docs/` 包含记忆系统设计对比、架构对比和选型建议。
 
-### ai-sdd/
+### ai-sdd/ — 规范驱动开发（SDD）
 
-AI 驱动的规范驱动开发（SDD）框架工作区，有独立的 [CLAUDE.md](ai-sdd/CLAUDE.md)。包含：
+有独立的 [CLAUDE.md](ai-sdd/CLAUDE.md)，包含完整的架构说明和约束。
 
-- **AI-SDD-template/** — SDD 框架模板，含 SpecKit 命令、Agent、技能定义和三层知识库系统（L0 企业级 > L1 项目级 > L2 仓库级）。有独立的 [CLAUDE.md](ai-sdd/AI-SDD-template/CLAUDE.md)。
-- **ai-plugin-market/** — Claude Code 插件市场，发布为可安装的 `web3sdd` 插件（代码分析、SDD 工作流相关的 agents、commands、skills）。
+| 子模块 | 说明 |
+|--------|------|
+| `AI-SDD-template/` | SDD 框架模板，含 SpecKit 命令、Agent、三层知识库（L0 > L1 > L2） |
+| `ai-plugin-market/` | Claude Code 插件市场（`web3sdd` 插件） |
 
-### rrs_autotest/
+本地内容：
+- `ai-etl/` — ETL 相关培训材料和分析报告
+- `rrs_autodev/` — 监管报送 ETL 项目 AI-Coding 整体设计文档
+- `docs/` — 项目分析报告
 
-银行监管报送（征信/1104/EAST/AML）自动化测试框架，基于 Claude Code Skills 架构。有独立的 [CLAUDE.md](rrs_autotest/CLAUDE.md)。技术栈：Python（PySpark、Pandas、Requests）。
+### ai-skills/ — Claude Code 技能集合
 
-- 通过 Skill 编排实现流程自动化（flow-*）、外部系统封装（tool-*）、测试指导（test-*）、分析框架（analyze-*）、知识管理（knowledge-*）
-- **双轨组织**：`story/` 按需求纵向组织一次性内容，`knowledge/` 按类型横向组织可复用资产
-- **设计原则**：奥卡姆剃刀 — 如无必要勿增实体，Skill 控制在 100 行内，描述目标而非规定工具
-- 依赖外部 ETL 工程（`/Users/polarischen/code/book_datatest/etl`）和血缘 API（`http://localhost:8000/api`）
+| 子模块 | 说明 |
+|--------|------|
+| `awesome-claude-code-subagents/` | VoltAgent 子代理精选集 |
+| `gstack/` | Garry Tan 的技能栈 |
+| `superpowers/` | 超级技能集（计划、调试、TDD、代码审查等） |
+
+本地内容：技能对比分析文档（`AI-Skills-Guide.md`、`skills-comparison.md`、`AI-Agent-Skills-Deep-Dive.md`）和演示幻灯片。
+
+### ai-writing/ — AI 写作
+
+| 子模块 | 说明 |
+|--------|------|
+| `creative-writing-skills/` | AI 创意写作技能 |
+| `book_novel_tang/` | 唐代小说书籍项目 |
+
+### rrs_autotest/ — 监管报送自动化测试
+
+有独立的 [CLAUDE.md](rrs_autotest/CLAUDE.md)。技术栈：Python（PySpark、Pandas、Requests）。
+
+基于 Claude Code Skills 架构，通过对话触发 Skill 编排测试流程：
+- `flow-requirement-test` — 需求变更测试
+- `flow-bug-diagnose` — 问题排查定位
+- `flow-regression` — 回归测试
+
+依赖外部 ETL 工程（`/Users/polarischen/code/book_datatest/etl`）和血缘 API（`http://localhost:8000/api`）。
+
+### dev_notes/ — 开发笔记
+
+环境配置相关笔记：Mutagen 文件同步、Playwright 反向 SSH、SSH 反向隧道。
 
 ## 常用命令
 
@@ -61,64 +117,35 @@ python3 AI-SDD-init.py --full   # 强制完整初始化
 .specify/scripts/bash/load-knowledge.sh list
 ```
 
+SDD 开发工作流：
+- **完整流程**（大功能）：`/speckit.specify` → `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.checklist` → `/speckit.implement` → `/speckit.summary` → `/git-commit`
+- **轻量流程**（小功能/bug 修复）：`/simplesdd:feature-dev <功能描述>`
+
 ### PAI
 
 ```bash
-# 安装最新版本
 cd ai-memory/Personal_AI_Infrastructure/Releases/v4.0.3
 cp -r .claude ~/ && cd ~/.claude && bash install.sh
-
-# 安装/升级后构建 CLAUDE.md
-bun ~/.claude/PAI/Tools/BuildCLAUDE.ts
+bun ~/.claude/PAI/Tools/BuildCLAUDE.ts    # 安装后构建 CLAUDE.md
 ```
 
 ### rrs_autotest（Python）
 
 ```bash
 cd rrs_autotest
-pip install -r requirements.txt     # 安装依赖（PySpark、Pandas、Requests 等）
+pip install -r requirements.txt     # 安装依赖
 python tools/lineage/client.py      # 测试血缘 API 客户端
 python tools/schema/client.py       # 测试表结构查询
 ```
-
-Skill 通过对话触发，无需手动执行命令。三类核心流程：
-- `flow-requirement-test` — 需求变更测试
-- `flow-bug-diagnose` — 问题排查定位
-- `flow-regression` — 回归测试
-
-## 架构说明
-
-### AI-SDD 三层知识库
-
-知识库层级有严格优先级（L0 > L1 > L2），L0 约束不可覆盖：
-
-| 层级 | 路径 | 用途 |
-|------|------|------|
-| L0 企业级 | `.knowledge/upstream/L0-enterprise/` | 强制约束（安全红线、编码规范） |
-| L1 项目级 | `.knowledge/upstream/L1-project/` | 项目级知识（业务领域、架构决策） |
-| L2 仓库级 | `.knowledge/` / `specs/{feature}/` | 本地仓库上下文 |
-
-### AI-SDD 开发工作流
-
-- **完整流程**（大功能）：`/speckit.specify` → `/speckit.clarify` → `/speckit.plan` → `/speckit.tasks` → `/speckit.checklist` → `/speckit.implement` → `/speckit.summary` → `/git-commit`
-- **轻量流程**（小功能/bug 修复）：`/simplesdd:feature-dev <功能描述>` — 自动执行 7 个阶段
-
-### cortex-mem Crate 关系
-
-- `cortex-mem-core` — 核心记忆类型和存储引擎（虚拟文件系统 + 向量检索）
-- `cortex-mem-config` — 配置管理
-- `cortex-mem-tools` — AI Agent 集成的工具抽象
-- `cortex-mem-rig` — 与 `rig-core` LLM 框架的集成
-- `cortex-mem-service` — HTTP API 服务（Axum）
-- `cortex-mem-cli` — 命令行接口（Clap）
-- `cortex-mem-mcp` — Model Context Protocol 服务
 
 ## 工具策略
 
 - 优先使用 LSP 工具进行代码分析（goToDefinition、findReferences、hover、documentSymbol）
 - 仅当 LSP 不可用或失败时降级使用 Grep/Glob
 
-## 关键约束（AI-SDD）
+## 关键约束
+
+以下约束适用于 ai-sdd 子项目，详见 [ai-sdd/CLAUDE.md](ai-sdd/CLAUDE.md)：
 
 - AI 生成代码必须人工 Review 后方可合并
 - 禁止自动提交到 main/master/release 分支

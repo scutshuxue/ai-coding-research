@@ -25,3 +25,6 @@
 [submodule "ai-sdd/AI-SDD-template"]
 	path = ai-sdd/AI-SDD-template
 	url = git@github.com:WeTechHK/AI-SDD-template.git
+[submodule "ai-writing/book_novel_tang"]
+	path = ai-writing/book_novel_tang
+	url = git@github.com:scutshuxue/book_novel_tang.git
