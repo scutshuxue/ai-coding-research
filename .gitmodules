@@ -28,3 +28,6 @@
 [submodule "ai-writing/book_novel_tang"]
 	path = ai-writing/book_novel_tang
 	url = git@github.com:scutshuxue/book_novel_tang.git
+[submodule "ai-ide-framework/hello-halo"]
+	path = ai-ide-framework/hello-halo
+	url = https://github.com/openkursar/hello-halo.git
