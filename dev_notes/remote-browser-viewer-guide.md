@@ -1259,15 +1259,3 @@ Claude Code:
 | 调整质量 | `Settings` → `Remote Browser` | 调 FPS、JPEG质量、分辨率 |
 | 关闭面板 | 点击面板上的 X | 停止推流，回到监听模式 |
 
----
-
-## 12. 与 Hello-Halo 对比
-
-| 维度 | Hello-Halo | 本方案 |
-|------|-----------|--------|
-| 浏览器引擎 | Electron BrowserView | Playwright headless Chromium |
-| 需要 GUI | 是（Electron需要X/Wayland） | **否（headless模式）** |
-| 远程查看 | HTTP + WebSocket + Cloudflare Tunnel | **CDP Screencast + VSCode内部通道** |
-| 实时性 | 依赖Electron窗口渲染 | **30-60fps原生帧流** |
-| 部署复杂度 | 需要 Electron + 可能需要 Xvfb | **零额外服务** |
-| 端口转发 | 需要 | **不需要（同一台机器localhost直连）** |
