@@ -323,9 +323,16 @@ sequenceDiagram
 
 ### 5.1 操作步骤
 
-```bash
-# Linux端 — 确保Playwright启动时暴露CDP端口
-PLAYWRIGHT_LAUNCH_ARGS="--remote-debugging-port=9222"
+```
+⚠️ 注意：Playwright MCP 不支持 PLAYWRIGHT_LAUNCH_ARGS 环境变量，
+也不支持通过 launchOptions.args 固定 CDP 端口（内部 injectCdpPort 会强制覆盖为随机端口）。
+
+实际可用方案：Playwright MCP 启动 Chrome 时会自动暴露一个随机 CDP 端口，
+可通过查看 Chrome 进程参数获取：
+  ps aux | grep remote-debugging-port
+
+如需固定端口，需 patch Playwright MCP 源码中的 injectCdpPort 函数，
+或自行启动 Chrome 后通过配置文件的 cdpEndpoint 字段连接。
 ```
 
 ```mermaid
@@ -923,23 +930,31 @@ panel.webview.onDidReceiveMessage(msg => {
 ### 8.1 MCP 配置
 
 ```jsonc
-// .claude/mcp.json — 确保Playwright暴露CDP端口
-// ⚠️ 注意：PLAYWRIGHT_LAUNCH_ARGS 不是 Playwright MCP 的标准配置项
-// 需要确认你使用的 MCP Server 实现是否支持此环境变量
-// 如果不支持，可能需要通过其他方式传递 Chrome 启动参数，例如：
-//   - 修改 MCP Server 配置文件
-//   - 使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指向自定义启动脚本
+// ⚠️ Playwright MCP 不支持通过环境变量或 launchOptions.args 固定 CDP 端口
+// 内部 injectCdpPort 函数会强制将 --remote-debugging-port 覆盖为随机端口
+//
+// 方案一：动态发现端口（推荐，无需额外配置）
+//   Playwright MCP 启动 Chrome 后，通过进程参数获取实际 CDP 端口：
+//   ps aux | grep remote-debugging-port | sed 's/.*--remote-debugging-port=\([0-9]*\).*/\1/'
+//
+// 方案二：固定端口 — 自行启动 Chrome + cdpEndpoint 连接
+//   1. 先启动 Chrome：
+//      google-chrome --headless=new --remote-debugging-port=9222 --no-first-run about:blank
+//   2. 配置 Playwright MCP 连接已有浏览器：
 {
   "mcpServers": {
     "playwright": {
       "command": "npx",
-      "args": ["@anthropic-ai/mcp-playwright"],
-      "env": {
-        "PLAYWRIGHT_LAUNCH_ARGS": "--remote-debugging-port=9222"
-      }
+      "args": ["@playwright/mcp@latest", "--cdp-endpoint", "http://localhost:9222"]
     }
   }
 }
+// 或通过配置文件（--config playwright-mcp-config.json）：
+// { "browser": { "cdpEndpoint": "http://localhost:9222" } }
+//
+// 方案三：patch 源码 — 修改 injectCdpPort 使其尊重用户指定的端口
+//   文件：node_modules/playwright/lib/mcp/browser/browserContextFactory.js
+//   将 injectCdpPort 中无条件 findFreePort() 改为先检查 args 中是否已有 --remote-debugging-port
 ```
 
 ### 8.2 最终部署图
@@ -1158,14 +1173,11 @@ graph TB
 Step 1: Windows VSCode → Extensions → ... → Install from VSIX → 选择 remote-browser-viewer.vsix
         VSCode 自动将插件安装到 Linux Remote 端
 
-Step 2: 在 Linux 项目目录下编辑 .claude/mcp.json，确保 Playwright 暴露 CDP 端口：
-        {
-          "mcpServers": {
-            "playwright": {
-              "env": { "PLAYWRIGHT_LAUNCH_ARGS": "--remote-debugging-port=9222" }
-            }
-          }
-        }
+Step 2: 配置 Playwright MCP 连接固定端口的 Chrome：
+        方式 A（动态端口）：无需配置，Viewer 插件自动从 Chrome 进程发现 CDP 端口
+        方式 B（固定端口）：先启动 Chrome（--remote-debugging-port=9222），
+        然后在 playwright-mcp-config.json 中配置：
+        { "browser": { "cdpEndpoint": "http://localhost:9222" } }
 
 Step 3: 重新加载 VSCode 窗口（Ctrl+Shift+P → Reload Window）
 ```

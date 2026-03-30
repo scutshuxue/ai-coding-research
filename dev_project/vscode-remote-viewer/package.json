@@ -1,0 +1,40 @@
+{
+  "name": "remote-browser-viewer",
+  "displayName": "Remote Browser Viewer",
+  "description": "在 VSCode WebView 中实时查看 Playwright MCP 操控的浏览器画面",
+  "version": "0.1.0",
+  "publisher": "polarischen",
+  "engines": { "vscode": "^1.85.0" },
+  "categories": ["Other"],
+  "activationEvents": ["onStartupFinished"],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      { "command": "remoteBrowser.open", "title": "Remote Browser: 打开浏览器视图" },
+      { "command": "remoteBrowser.stop", "title": "Remote Browser: 停止 Screencast" }
+    ],
+    "configuration": {
+      "title": "Remote Browser Viewer",
+      "properties": {
+        "remoteBrowser.autoOpen": { "type": "boolean", "default": true, "description": "检测到浏览器操作时自动打开视图" },
+        "remoteBrowser.quality": { "type": "number", "default": 80, "minimum": 1, "maximum": 100, "description": "JPEG 质量 1-100" },
+        "remoteBrowser.maxWidth": { "type": "number", "default": 1280, "description": "Screencast 最大宽度" },
+        "remoteBrowser.maxHeight": { "type": "number", "default": 720, "description": "Screencast 最大高度" }
+      }
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "test": "node --import tsx --test src/test/*.test.ts",
+    "package": "vsce package"
+  },
+  "dependencies": { "ws": "^8.18.0" },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@types/ws": "^8.5.0",
+    "esbuild": "^0.25.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.5.0"
+  }
+}
