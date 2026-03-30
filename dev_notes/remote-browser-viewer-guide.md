@@ -58,7 +58,7 @@ graph TB
 
 | 方案 | 实时性 | 复杂度 | 在VSCode内 | 说明 |
 |------|--------|--------|-----------|------|
-| **CDP Screencast** | **30-60fps** | **低** | **是** | Chromium 内置帧流，最佳 |
+| **CDP Screencast** | **5-30fps** | **低** | **是** | Chromium 内置帧流，最佳（实际帧率受页面复杂度和 JPEG 编码影响） |
 | Chrome 远程调试 | 实时页面 | 最低 | 否 | Windows Chrome 直连查看 |
 | noVNC + Xvfb | 实时桌面 | 高 | 否 | 全桌面共享，过重 |
 | 截图轮询 | 2fps | 低 | 是 | 幻灯片，不推荐 |
@@ -78,7 +78,7 @@ sequenceDiagram
 
     Client->>CDP: Page.startScreencast<br/>{format:"jpeg", quality:80}
 
-    loop 每帧 约16-33ms 即30-60fps
+    loop 每帧 约33-200ms 即5-30fps(受页面复杂度影响)
         CDP->>Client: Page.screencastFrame<br/>{data: "base64...", sessionId: N}
         Client->>CDP: Page.screencastFrameAck<br/>{sessionId: N}
         Note right of Client: ACK背压控制<br/>不确认就不推下一帧
@@ -92,14 +92,14 @@ sequenceDiagram
 | 维度 | 截图 page.screenshot | Screencast Page.startScreencast |
 |------|---------------------|-------------------------------|
 | 触发方式 | 客户端主动拉取 | Chromium 主动推送 |
-| 帧率 | 受轮询限制 2fps | 跟随渲染帧率 30-60fps |
+| 帧率 | 受轮询限制 2fps | 跟随渲染帧率 5-30fps（ACK 单缓冲机制限制上限） |
 | 变化感知 | 盲等，错过过渡动画 | 有变化就推，能看到动画 |
 | 带宽控制 | 无 | 有背压 ack 机制 |
 | 资源消耗 | 每次完整编码 | 更高效 |
 
 ### 2.3 多客户端共享 CDP
 
-Playwright MCP 和 Viewer 插件可以同时连接同一个 CDP 端口，互不干扰：
+Playwright MCP 和 Viewer 插件可以同时连接同一个 CDP 端口。Chromium 支持多客户端 CDP 连接，但需注意：Playwright 内部也使用 CDP，两个客户端对同一 target 发送命令可能存在竞态。Viewer 应尽量只做**只读操作**（Screencast、事件监听），避免发送会改变页面状态的命令：
 
 ```mermaid
 graph TB
@@ -117,13 +117,15 @@ graph TB
 
 ### 2.4 性能估算
 
-| 分辨率 | JPEG质量 | 单帧大小 | 30fps带宽 |
-|--------|---------|----------|----------|
-| 1280x720 | 80% | ~50-80KB | ~1.5-2.4 MB/s |
-| 1280x720 | 60% | ~30-50KB | ~0.9-1.5 MB/s |
-| 960x540 | 70% | ~20-35KB | ~0.6-1.0 MB/s |
+| 分辨率 | JPEG质量 | 单帧大小 | 15fps带宽(典型) | 30fps带宽(峰值) |
+|--------|---------|----------|----------------|----------------|
+| 1280x720 | 80% | ~50-80KB | ~0.75-1.2 MB/s | ~1.5-2.4 MB/s |
+| 1280x720 | 60% | ~30-50KB | ~0.45-0.75 MB/s | ~0.9-1.5 MB/s |
+| 960x540 | 70% | ~20-35KB | ~0.3-0.5 MB/s | ~0.6-1.0 MB/s |
 
-SSH 隧道带宽通常 10-50 MB/s，1280x720 30fps 完全够用。
+> **实际帧率说明**：CDP Screencast 使用 ACK 单缓冲机制（确认一帧后才推下一帧），加上 JPEG 编码耗时，实际帧率通常在 5-15fps（简单页面可达 20-30fps）。对于观察 AI 操作浏览器的场景已足够流畅。
+
+SSH 隧道带宽通常 10-50 MB/s，1280x720 完全够用。
 
 ---
 
@@ -260,7 +262,7 @@ graph TB
 
     subgraph Windows["Windows"]
         WV["WebView 面板<br/>实时画面"]
-        SB["状态栏 30fps"]
+        SB["状态栏"]
     end
 
     LLM -->|"调用"| CC
@@ -277,7 +279,7 @@ graph TB
 ```
 
 **优点**：
-- **真正的实时** — 30-60fps 流畅画面
+- **真正的实时** — 5-30fps 流畅画面（满足观察 AI 操作需求）
 - **零额外服务** — Linux 不需要部署额外进程
 - **零端口转发** — 插件和 Chromium 同一台机器
 - **无网络开销** — localhost 直连，延迟极低
@@ -303,7 +305,7 @@ sequenceDiagram
     EXT->>Chrome: Page.startScreencast
     EXT->>WV: 自动创建WebView面板
 
-    loop 实时帧流 30-60fps
+    loop 实时帧流 5-30fps
         Chrome-->>EXT: Page.screencastFrame base64
         EXT->>Chrome: screencastFrameAck 背压确认
         EXT-->>WV: postMessage 帧数据
@@ -353,15 +355,16 @@ sequenceDiagram
 
     Note over EXT: 插件在Remote Extension Host激活
 
-    EXT->>CDP: GET http://localhost:9222/json/version
-    CDP-->>EXT: webSocketDebuggerUrl
+    EXT->>CDP: GET http://localhost:9222/json/list
+    CDP-->>EXT: 页面target列表(含webSocketDebuggerUrl)
+    Note over EXT: 筛选type=page的target
 
     EXT->>CDP: WebSocket connect ws://127.0.0.1:9222/...
     Note over EXT,CDP: localhost直连 无端口转发
 
     EXT->>CDP: Page.startScreencast<br/>{format:"jpeg", quality:80}
 
-    loop 帧流 30-60fps
+    loop 帧流 5-30fps
         CDP-->>EXT: Page.screencastFrame base64
         EXT->>EXT: postMessage给WebView
         EXT->>CDP: Page.screencastFrameAck
@@ -399,9 +402,15 @@ function openViewer() {
     panel.onDidDispose(() => { ws?.close(); ws = undefined; });
 
     // localhost 直连 无端口转发
-    fetch(`http://localhost:${port}/json/version`)
+    // 注意：必须用 /json/list 获取页面级 target，而非 /json/version（浏览器级）
+    // Page.startScreencast 是页面级命令，需要连接到具体 target 的 WebSocket
+    fetch(`http://localhost:${port}/json/list`)
         .then(r => r.json())
-        .then(info => connectCDP(info.webSocketDebuggerUrl))
+        .then(targets => {
+            const pageTarget = targets.find((t: any) => t.type === 'page');
+            if (!pageTarget) throw new Error('未找到页面 target');
+            connectCDP(pageTarget.webSocketDebuggerUrl);
+        })
         .catch(err => vscode.window.showErrorMessage(
             `CDP 连接失败: ${err.message}`
         ));
@@ -519,6 +528,7 @@ sequenceDiagram
     Viewer->>Chrome: CDP连接 (监听模式)
     Viewer->>Chrome: Page.enable
     Viewer->>Chrome: Runtime.enable
+    Viewer->>Chrome: Target.setDiscoverTargets
 
     rect rgb(230, 245, 255)
         Note over CC,Chrome: Claude Code 调用浏览器操作
@@ -560,26 +570,37 @@ export class PageWatcher {
 
     /** 连接到 Chromium CDP 并监听事件 */
     async connect(port: number = 9222) {
-        // 1. 发现 CDP 端点
-        const resp = await fetch(`http://localhost:${port}/json/version`);
-        const info = await resp.json();
+        // 0. 关闭旧连接（防止重连时 WebSocket 泄漏）
+        this.dispose();
 
-        // 2. 建立 WebSocket 连接
-        this.ws = new WebSocket(info.webSocketDebuggerUrl);
+        // 1. 发现 CDP 页面级端点（必须用 /json/list 而非 /json/version）
+        // /json/version 返回浏览器级 WebSocket，Page 域命令需要页面级连接
+        const resp = await fetch(`http://localhost:${port}/json/list`);
+        const targets = await resp.json();
+        const pageTarget = targets.find((t: any) => t.type === 'page');
+        if (!pageTarget) throw new Error('未找到页面 target');
+
+        // 2. 建立页面级 WebSocket 连接
+        this.ws = new WebSocket(pageTarget.webSocketDebuggerUrl);
 
         this.ws.on('open', () => {
             // 启用 Page 域事件监听（不需要启动 Screencast）
-            this.send('Page.enable');
-            this.send('Runtime.enable');
+            this.sendCommand('Page.enable');
+            this.sendCommand('Runtime.enable');
+            // 启用 Target 域事件，否则 Target.targetCreated 不会被推送
+            this.sendCommand('Target.setDiscoverTargets', { discover: true });
             console.log('[PageWatcher] 已连接 CDP，监听页面事件');
         });
 
         this.ws.on('message', (data: Buffer) => {
             const msg = JSON.parse(data.toString());
 
-            // 监听页面导航
+            // 监听页面导航（仅顶层 frame，忽略 iframe）
             if (msg.method === 'Page.frameNavigated') {
-                const url = msg.params.frame.url;
+                const frame = msg.params.frame;
+                // parentId 存在表示是 iframe，只处理主 frame 的导航
+                if (frame.parentId) return;
+                const url = frame.url;
                 if (url && url !== 'about:blank' && url !== this.currentUrl) {
                     this.currentUrl = url;
                     console.log(`[PageWatcher] 页面导航: ${url}`);
@@ -609,12 +630,14 @@ export class PageWatcher {
         return this.ws;
     }
 
-    private send(method: string, params?: any) {
+    /** 发送 CDP 命令（公开方法，供外部如 Screencast 使用统一 ID 序列） */
+    sendCommand(method: string, params?: any) {
         this.ws?.send(JSON.stringify({ id: ++this.cmdId, method, params }));
     }
 
     dispose() {
         this.ws?.close();
+        this.ws = undefined;
     }
 }
 ```
@@ -640,9 +663,16 @@ export function activate(ctx: vscode.ExtensionContext) {
     if (autoOpen) {
         // 2. 注册自动触发回调
         pageWatcher.setOnActivated((url) => {
-            // 如果 WebView 已存在，只 focus
-            if (panel && !panel.visible) {
-                panel.reveal(vscode.ViewColumn.Beside);
+            if (panel) {
+                // 面板已存在：更新标题和 URL，确保可见
+                let title = 'Remote Browser';
+                try { title = `Browser: ${new URL(url).hostname}`; }
+                catch { title = `Browser: ${url.slice(0, 30)}`; }
+                panel.title = title;
+                panel.webview.postMessage({ type: 'url', url });
+                if (!panel.visible) {
+                    panel.reveal(vscode.ViewColumn.Beside);
+                }
                 return;
             }
             // 否则创建新面板并开始 Screencast
@@ -684,9 +714,14 @@ function openViewerWithScreencast(initialUrl?: string) {
     if (panel) {
         panel.reveal(vscode.ViewColumn.Beside);
     } else {
+        let title = 'Remote Browser';
+        if (initialUrl) {
+            try { title = `Browser: ${new URL(initialUrl).hostname}`; }
+            catch { title = `Browser: ${initialUrl.slice(0, 30)}`; }
+        }
         panel = vscode.window.createWebviewPanel(
             'browserView',
-            initialUrl ? `Browser: ${new URL(initialUrl).hostname}` : 'Remote Browser',
+            title,
             vscode.ViewColumn.Beside,
             { enableScripts: true }
         );
@@ -713,11 +748,11 @@ function startScreencast() {
     const quality = vscode.workspace.getConfiguration('remoteBrowser')
         .get<number>('quality', 80);
 
-    ws.send(JSON.stringify({
-        id: 9999,  // 固定 ID，避免和 PageWatcher 冲突
-        method: 'Page.startScreencast',
-        params: { format: 'jpeg', quality, maxWidth: 1280, maxHeight: 720 }
-    }));
+    // 通过 PageWatcher 的 send 方法发送，使用统一的递增 ID 避免冲突
+    // （不要用固定 ID，否则会和 PageWatcher 的递增 cmdId 碰撞）
+    pageWatcher.sendCommand('Page.startScreencast', {
+        format: 'jpeg', quality, maxWidth: 1280, maxHeight: 720
+    });
 
     // 监听帧（在 PageWatcher 的 message handler 中也需要处理帧事件）
     // 见 page-watcher.ts 中补充帧处理
@@ -758,7 +793,7 @@ PageWatcher 后台监听模式的资源消耗极低：
 | 状态 | CDP 连接 | Screencast | CPU | 内存 |
 |------|----------|------------|-----|------|
 | Watching（后台监听） | 保持 WebSocket | **未启动** | ~0% | ~5MB |
-| Casting（推流中） | 保持 WebSocket | 30fps 推流 | ~2-5% | ~20MB |
+| Casting（推流中） | 保持 WebSocket | 5-30fps 推流 | ~2-5% | ~20MB |
 
 **关键优化**：只在检测到浏览器操作时才启动 Screencast，平时仅保持一个轻量的 CDP 事件监听连接，几乎不消耗资源。
 
@@ -889,6 +924,11 @@ panel.webview.onDidReceiveMessage(msg => {
 
 ```jsonc
 // .claude/mcp.json — 确保Playwright暴露CDP端口
+// ⚠️ 注意：PLAYWRIGHT_LAUNCH_ARGS 不是 Playwright MCP 的标准配置项
+// 需要确认你使用的 MCP Server 实现是否支持此环境变量
+// 如果不支持，可能需要通过其他方式传递 Chrome 启动参数，例如：
+//   - 修改 MCP Server 配置文件
+//   - 使用 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH 指向自定义启动脚本
 {
   "mcpServers": {
     "playwright": {
@@ -917,7 +957,7 @@ graph TB
 
     subgraph Windows["Windows 开发机"]
         WV["WebView 面板<br/>实时浏览器画面"]
-        SB["状态栏 已连接 30fps"]
+        SB["状态栏 已连接"]
     end
 
     CC -->|"MCP"| MCP
@@ -1190,7 +1230,7 @@ graph TB
 
     subgraph After["Claude Code调用浏览器后 自动变化"]
         direction LR
-        EDITOR2["编辑器"] --- CHAT2["Claude Code<br/>正在操作浏览器..."] --- BROWSER["WebView面板<br/>🟢 实时浏览器画面<br/>30fps"]
+        EDITOR2["编辑器"] --- CHAT2["Claude Code<br/>正在操作浏览器..."] --- BROWSER["WebView面板<br/>🟢 实时浏览器画面"]
     end
 
     Before -->|"全自动<br/>无需手动操作"| After
@@ -1208,7 +1248,7 @@ graph TB
 Claude Code: 调用 browser_navigate("https://baidu.com")
 
 → Windows VSCode 右侧自动弹出 WebView 面板
-→ 面板中显示百度首页的实时画面（30fps）
+→ 面板中显示百度首页的实时画面
 → 状态栏显示 "🟢 Remote Browser | baidu.com"
 ```
 
