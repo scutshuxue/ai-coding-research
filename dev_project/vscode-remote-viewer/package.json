@@ -10,8 +10,10 @@
   "main": "./dist/extension.js",
   "contributes": {
     "commands": [
-      { "command": "remoteBrowser.open", "title": "Remote Browser: 打开浏览器视图" },
-      { "command": "remoteBrowser.stop", "title": "Remote Browser: 停止 Screencast" }
+      { "command": "remoteBrowser.open", "title": "Remote Browser: 打开浏览器视图", "icon": "$(globe)" },
+      { "command": "remoteBrowser.stop", "title": "Remote Browser: 停止 Screencast" },
+      { "command": "remoteBrowser.refresh", "title": "Remote Browser: 刷新连接", "icon": "$(refresh)" },
+      { "command": "remoteBrowser.status", "title": "Remote Browser: 查看连接状态" }
     ],
     "configuration": {
       "title": "Remote Browser Viewer",
@@ -27,7 +29,7 @@
     "build": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "test": "node --import tsx --test src/test/*.test.ts",
-    "package": "vsce package"
+    "package": "bash scripts/package.sh"
   },
   "dependencies": { "ws": "^8.18.0" },
   "devDependencies": {

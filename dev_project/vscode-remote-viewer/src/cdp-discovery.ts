@@ -43,3 +43,17 @@ export async function findPageTarget(port: number): Promise<CdpTarget> {
   if (!page) throw new Error('未找到页面 target');
   return page;
 }
+
+/** 获取所有页面类型的 target（过滤掉内部页面） */
+export async function findAllPageTargets(port: number): Promise<CdpTarget[]> {
+  const targets = await findCdpTargets(port);
+  return targets.filter(t => t.type === 'page');
+}
+
+/** 获取浏览器级 WebSocket URL（用于 Target domain 监听） */
+export async function findBrowserWsUrl(port: number): Promise<string> {
+  const resp = await fetch(`http://127.0.0.1:${port}/json/version`);
+  if (!resp.ok) throw new Error(`CDP version HTTP ${resp.status}`);
+  const info = await resp.json() as { webSocketDebuggerUrl: string };
+  return info.webSocketDebuggerUrl;
+}
