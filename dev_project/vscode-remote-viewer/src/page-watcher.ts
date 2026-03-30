@@ -1,8 +1,16 @@
 import WebSocket from 'ws';
-import { discoverCdpPort, findBrowserWsUrl, findAllPageTargets, type CdpTarget } from './cdp-discovery';
+import { discoverCdpPort, findBrowserWsUrl, findAllPageTargets } from './cdp-discovery';
 
 export type BrowserActivatedCallback = (url: string) => void;
-export type FrameCallback = (base64Data: string, sessionId: number) => void;
+export interface ScreencastMetadata {
+  offsetTop: number;
+  pageScaleFactor: number;
+  deviceWidth: number;
+  deviceHeight: number;
+  scrollOffsetX: number;
+  scrollOffsetY: number;
+}
+export type FrameCallback = (base64Data: string, sessionId: number, metadata: ScreencastMetadata) => void;
 export type ReconnectedCallback = () => void;
 export type TabsChangedCallback = (tabs: TabInfo[]) => void;
 
@@ -215,9 +223,19 @@ export class PageWatcher {
       }
     }
 
+    // 处理 getNavigationHistory 响应（用于 goBack/goForward）
+    if (msg.result?.entries && this._pendingNavAction) {
+      const { currentIndex, entries } = msg.result;
+      const targetIndex = this._pendingNavAction === 'back' ? currentIndex - 1 : currentIndex + 1;
+      this._pendingNavAction = null;
+      if (targetIndex >= 0 && targetIndex < entries.length) {
+        this.sendPageCommand('Page.navigateToHistoryEntry', { entryId: entries[targetIndex].id });
+      }
+    }
+
     if (msg.method === 'Page.screencastFrame') {
-      const { data, sessionId } = msg.params;
-      this.onFrame?.(data, sessionId);
+      const { data, sessionId, metadata } = msg.params;
+      this.onFrame?.(data, sessionId, metadata);
       this.sendPageCommand('Page.screencastFrameAck', { sessionId });
     }
   }
@@ -230,6 +248,61 @@ export class PageWatcher {
 
   stopScreencast() {
     this.sendPageCommand('Page.stopScreencast');
+  }
+
+  // ===== 导航方法 =====
+
+  navigate(url: string) {
+    this.sendPageCommand('Page.navigate', { url });
+  }
+
+  reload() {
+    this.sendPageCommand('Page.reload');
+  }
+
+  goBack() {
+    this.sendPageCommand('Page.getNavigationHistory');
+    // 响应在 handlePageMessage 中处理
+    this._pendingNavAction = 'back';
+  }
+
+  goForward() {
+    this.sendPageCommand('Page.getNavigationHistory');
+    this._pendingNavAction = 'forward';
+  }
+
+  private _pendingNavAction: 'back' | 'forward' | null = null;
+
+  // ===== 输入派发方法 =====
+
+  dispatchMouseEvent(type: string, x: number, y: number, button?: string, clickCount?: number, deltaX?: number, deltaY?: number) {
+    this.sendPageCommand('Input.dispatchMouseEvent', {
+      type, x, y,
+      button: button || 'left',
+      clickCount: clickCount || 0,
+      deltaX: deltaX || 0,
+      deltaY: deltaY || 0,
+    });
+  }
+
+  closeTarget(targetId: string) {
+    this.sendBrowserCommand('Target.closeTarget', { targetId });
+  }
+
+  insertText(text: string) {
+    this.sendPageCommand('Input.insertText', { text });
+  }
+
+  dispatchKeyEvent(type: string, key: string, code: string, text?: string, modifiers?: number) {
+    const params: any = { type, key, code, modifiers: modifiers || 0 };
+    if (text) params.text = text;
+    // windowsVirtualKeyCode 映射常用键
+    if (key === 'Enter') params.windowsVirtualKeyCode = 13;
+    else if (key === 'Backspace') params.windowsVirtualKeyCode = 8;
+    else if (key === 'Tab') params.windowsVirtualKeyCode = 9;
+    else if (key === 'Escape') params.windowsVirtualKeyCode = 27;
+    else if (text && text.length === 1) params.windowsVirtualKeyCode = text.charCodeAt(0);
+    this.sendPageCommand('Input.dispatchKeyEvent', params);
   }
 
   private sendBrowserCommand(method: string, params?: any) {

@@ -22,9 +22,9 @@ export function activate(ctx: vscode.ExtensionContext) {
   // PageWatcher
   pageWatcher = new PageWatcher();
 
-  // 帧回调
-  pageWatcher.setOnFrame((base64Data) => {
-    panel?.webview.postMessage({ type: 'frame', data: base64Data });
+  // 帧回调（含 metadata 用于坐标转换）
+  pageWatcher.setOnFrame((base64Data, _sessionId, metadata) => {
+    panel?.webview.postMessage({ type: 'frame', data: base64Data, metadata });
   });
 
   // Tab 变化回调
@@ -146,6 +146,34 @@ function openViewerWithScreencast(initialUrl?: string) {
       if (msg.type === 'requestRefresh') {
         vscode.commands.executeCommand('remoteBrowser.refresh');
       }
+      if (msg.type === 'closeTab') {
+        pageWatcher.closeTarget(msg.targetId);
+      }
+      // 导航
+      if (msg.type === 'navigate') {
+        pageWatcher.navigate(msg.url);
+      }
+      if (msg.type === 'goBack') {
+        pageWatcher.goBack();
+      }
+      if (msg.type === 'goForward') {
+        pageWatcher.goForward();
+      }
+      if (msg.type === 'reload') {
+        pageWatcher.reload();
+      }
+      // 鼠标事件
+      if (msg.type === 'mouseEvent') {
+        handleMouseEvent(msg);
+      }
+      // 键盘事件
+      if (msg.type === 'keyEvent') {
+        handleKeyEvent(msg);
+      }
+      // IME 中文输入
+      if (msg.type === 'imeCommit') {
+        pageWatcher.insertText(msg.text);
+      }
     });
     // 发送当前 tab 列表
     const tabs = pageWatcher.getTabs();
@@ -214,6 +242,43 @@ function updateStatusBar(tabs: TabInfo[]) {
     `标签页: ${count}`,
     ...tabs.map(t => `  ${t.targetId === pageWatcher.getActiveTargetId() ? '▶' : '•'} ${t.title || t.url}`),
   ].join('\n');
+}
+
+function handleMouseEvent(msg: any) {
+  const { action, x, y, button, clickCount, deltaX, deltaY } = msg;
+  switch (action) {
+    case 'mousePressed':
+      pageWatcher.dispatchMouseEvent('mousePressed', x, y, button, clickCount || 1);
+      break;
+    case 'mouseReleased':
+      pageWatcher.dispatchMouseEvent('mouseReleased', x, y, button, clickCount || 1);
+      break;
+    case 'dblclick':
+      pageWatcher.dispatchMouseEvent('mousePressed', x, y, button, 2);
+      pageWatcher.dispatchMouseEvent('mouseReleased', x, y, button, 2);
+      break;
+    case 'move':
+      pageWatcher.dispatchMouseEvent('mouseMoved', x, y, button || 'none');
+      break;
+    case 'wheel':
+      pageWatcher.dispatchMouseEvent('mouseWheel', x, y, 'none', 0, deltaX, deltaY);
+      break;
+  }
+}
+
+function handleKeyEvent(msg: any) {
+  const { action, key, code, text, modifiers } = msg;
+  switch (action) {
+    case 'keyDown':
+      pageWatcher.dispatchKeyEvent('keyDown', key, code, undefined, modifiers);
+      break;
+    case 'char':
+      pageWatcher.dispatchKeyEvent('char', key, code, text, modifiers);
+      break;
+    case 'keyUp':
+      pageWatcher.dispatchKeyEvent('keyUp', key, code, undefined, modifiers);
+      break;
+  }
 }
 
 function shortenUrl(url: string): string {
