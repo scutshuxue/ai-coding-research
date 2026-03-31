@@ -1,10 +1,10 @@
 # WSS 隧道代理 实施计划
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** 构建一个基于 WSS（WebSocket over TLS）的隧道代理系统，让网络隔离的 Linux 通过 Windows 出网，替代 SSH 反向隧道方案，端口扫描和流量分析均无法识别。
 
-**Architecture:** Linux 端运行 WSS Server（TLS 加密，伪装为 HTTPS 网站）+ Local Proxy（127.0.0.1:18080）。Windows 端主动连接 Linux WSS Server 建立隧道。Linux 应用通过 Local Proxy 发起代理请求，请求通过 WSS 隧道多路复用转发到 Windows 端执行出网。
+**Architecture:** Linux 端运行 WSS Server（TLS 加密，伪装为 HTTPS 网站）+ Local Proxy（127.0.0.1:8054）。Windows 端主动连接 Linux WSS Server 建立隧道。Linux 应用通过 Local Proxy 发起代理请求，请求通过 WSS 隧道多路复用转发到 Windows 端执行出网。
 
 **Tech Stack:** Python 3.8+, `websockets` 库, `ssl` stdlib, `asyncio`
 
@@ -42,7 +42,7 @@ dev_project/proxy-tunnel/wss-tunnel/
 - Create: `dev_project/proxy-tunnel/wss-tunnel/tests/test_common.py`
 - Create: `dev_project/proxy-tunnel/wss-tunnel/tests/conftest.py`
 
-- [ ] **Step 1: 创建目录结构**
+- [x] **Step 1: 创建目录结构**
 
 ```bash
 mkdir -p dev_project/proxy-tunnel/wss-tunnel/tests
@@ -50,7 +50,7 @@ touch dev_project/proxy-tunnel/wss-tunnel/tests/__init__.py
 touch dev_project/proxy-tunnel/wss-tunnel/tests/conftest.py
 ```
 
-- [ ] **Step 2: 编写消息协议的测试**
+- [x] **Step 2: 编写消息协议的测试**
 
 写入 `dev_project/proxy-tunnel/wss-tunnel/tests/test_common.py`:
 
@@ -137,7 +137,7 @@ def test_parse_missing_type():
         parse_msg('{"id": "abc"}')
 ```
 
-- [ ] **Step 3: 运行测试确认失败**
+- [x] **Step 3: 运行测试确认失败**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py -v
@@ -145,7 +145,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py 
 
 预期：全部 FAIL（`ModuleNotFoundError: No module named 'tunnel_common'`）
 
-- [ ] **Step 4: 实现消息协议**
+- [x] **Step 4: 实现消息协议**
 
 写入 `dev_project/proxy-tunnel/wss-tunnel/tunnel_common.py`:
 
@@ -208,7 +208,7 @@ def generate_stream_id() -> str:
     return secrets.token_hex(8)
 ```
 
-- [ ] **Step 5: 运行测试确认通过**
+- [x] **Step 5: 运行测试确认通过**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py -v
@@ -216,7 +216,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py 
 
 预期：9 tests PASSED
 
-- [ ] **Step 6: Commit**
+- [x] **Step 6: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tunnel_common.py \
@@ -232,7 +232,7 @@ git commit -m "feat(wss-tunnel): add message protocol in tunnel_common.py with t
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tunnel_common.py`
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tests/test_common.py`
 
-- [ ] **Step 1: 编写证书和 Token 的测试**
+- [x] **Step 1: 编写证书和 Token 的测试**
 
 追加到 `tests/test_common.py`:
 
@@ -257,8 +257,8 @@ def test_generate_token_unique():
 def test_save_and_load_config(tmp_path):
     from tunnel_common import save_config, load_config
     config = {'token': 'abc123', 'fingerprint': 'SHA256:xxx'}
-    save_config(config, tmp_path / 'config.json')
-    loaded = load_config(tmp_path / 'config.json')
+    save_config(config, tmp_path / 'server.json')
+    loaded = load_config(tmp_path / 'server.json')
     assert loaded['token'] == 'abc123'
     assert loaded['fingerprint'] == 'SHA256:xxx'
 
@@ -291,7 +291,7 @@ def test_generate_stream_id():
     assert len(ids) == 100
 ```
 
-- [ ] **Step 2: 运行测试确认新增用例失败**
+- [x] **Step 2: 运行测试确认新增用例失败**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py -v -k "token or config or cert or stream_id"
@@ -299,7 +299,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py 
 
 预期：FAIL（`ImportError` — 函数不存在）
 
-- [ ] **Step 3: 实现证书与 Token 管理**
+- [x] **Step 3: 实现证书与 Token 管理**
 
 在 `tunnel_common.py` 末尾追加：
 
@@ -344,7 +344,7 @@ def generate_self_signed_cert(cert_dir, days: int = 365) -> tuple:
         'openssl', 'req', '-x509', '-newkey', 'rsa:2048',
         '-keyout', key_path, '-out', cert_path,
         '-days', str(days), '-nodes',
-        '-subj', '/CN=Internal Dashboard/O=System/C=US'
+        '-subj', '/CN=Test Dashboard/O=System/C=US'
     ], check=True, capture_output=True)
 
     os.chmod(key_path, 0o600)
@@ -369,7 +369,7 @@ def get_cert_fingerprint(cert_path: str) -> str:
     return f'SHA256:{fp_hex}'
 ```
 
-- [ ] **Step 4: 运行全部测试确认通过**
+- [x] **Step 4: 运行全部测试确认通过**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py -v
@@ -377,7 +377,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_common.py 
 
 预期：15 tests PASSED（需要系统安装了 openssl）
 
-- [ ] **Step 5: Commit**
+- [x] **Step 5: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tunnel_common.py \
@@ -392,7 +392,7 @@ git commit -m "feat(wss-tunnel): add cert generation, token management to tunnel
 **Files:**
 - Create: `dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py`
 
-- [ ] **Step 1: 编写 TunnelManager 类**
+- [x] **Step 1: 编写 TunnelManager 类**
 
 创建 `dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py`:
 
@@ -405,7 +405,7 @@ WSS 隧道服务端（Linux 端运行）
 用法:
     python tunnel_server.py --init          # 首次初始化证书和 Token
     python tunnel_server.py                 # 启动服务
-    python tunnel_server.py --wss-port 9443 --proxy-port 18080
+    python tunnel_server.py --wss-port 8044 --proxy-port 8054
 """
 
 import argparse
@@ -437,10 +437,10 @@ log = logging.getLogger('tunnel-server')
 DISGUISE_PAGE = b"""\
 <!DOCTYPE html>
 <html>
-<head><title>Internal Dashboard</title></head>
+<head><title>Test Dashboard</title></head>
 <body>
 <h1>System Status</h1>
-<p>All services operational.</p>
+<p>All services passed.</p>
 </body>
 </html>"""
 
@@ -522,7 +522,7 @@ class TunnelManager:
             await self.connected.wait()
 ```
 
-- [ ] **Step 2: 运行语法检查**
+- [x] **Step 2: 运行语法检查**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -c "import tunnel_server; print('OK')"
@@ -530,7 +530,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -c "import tunnel_server; print
 
 预期：`OK`（需要 `pip install websockets`）
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py
@@ -544,7 +544,7 @@ git commit -m "feat(wss-tunnel): add TunnelManager core in tunnel_server.py"
 **Files:**
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py`
 
-- [ ] **Step 1: 添加 WSS Server 逻辑**
+- [x] **Step 1: 添加 WSS Server 逻辑**
 
 在 `tunnel_server.py` 的 `TunnelManager` 类之后追加：
 
@@ -617,7 +617,7 @@ class WSSServer:
             await self.tunnel.unregister_client()
 ```
 
-- [ ] **Step 2: 语法检查**
+- [x] **Step 2: 语法检查**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -c "from tunnel_server import WSSServer; print('OK')"
@@ -625,7 +625,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -c "from tunnel_server import W
 
 预期：`OK`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py
@@ -639,7 +639,7 @@ git commit -m "feat(wss-tunnel): add WSS Server with TLS, disguise page, token a
 **Files:**
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py`
 
-- [ ] **Step 1: 添加 Local Proxy 逻辑**
+- [x] **Step 1: 添加 Local Proxy 逻辑**
 
 在 `WSSServer` 类之后追加：
 
@@ -649,7 +649,7 @@ git commit -m "feat(wss-tunnel): add WSS Server with TLS, disguise page, token a
 class LocalProxy:
     """HTTP/HTTPS 代理，应用层入口。将请求通过 WSS 隧道转发。"""
 
-    CONNECT_TIMEOUT = 10  # 等待 Windows 端连接目标的超时
+    CONNECT_TIMEOUT = 60  # 等待 Windows 端连接目标的超时
 
     def __init__(self, tunnel: TunnelManager):
         self.tunnel = tunnel
@@ -664,7 +664,7 @@ class LocalProxy:
         """处理一个代理客户端连接。"""
         try:
             # 读取请求行
-            line = await asyncio.wait_for(reader.readline(), timeout=30)
+            line = await asyncio.wait_for(reader.readline(), timeout=60)
             if not line:
                 return
             request_line = line.decode('utf-8', errors='replace').strip()
@@ -787,7 +787,7 @@ class LocalProxy:
 
             # 接收响应并转发给客户端
             while True:
-                msg = await asyncio.wait_for(q.get(), timeout=30)
+                msg = await asyncio.wait_for(q.get(), timeout=60)
                 if msg is None:
                     break
                 if msg['type'] == 'data':
@@ -856,7 +856,7 @@ class LocalProxy:
         return addr, default_port
 ```
 
-- [ ] **Step 2: 语法检查**
+- [x] **Step 2: 语法检查**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -c "from tunnel_server import LocalProxy; print('OK')"
@@ -864,7 +864,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -c "from tunnel_server import L
 
 预期：`OK`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py
@@ -878,7 +878,7 @@ git commit -m "feat(wss-tunnel): add Local Proxy with HTTP/HTTPS support"
 **Files:**
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py`
 
-- [ ] **Step 1: 添加 main 函数和 --init 逻辑**
+- [x] **Step 1: 添加 main 函数和 --init 逻辑**
 
 在文件末尾追加：
 
@@ -895,7 +895,7 @@ def do_init(cert_dir: str):
     fp = get_cert_fingerprint(cert_path)
     token = generate_token()
     config = {'token': token, 'fingerprint': fp}
-    save_config(config, os.path.join(cert_dir, 'config.json'))
+    save_config(config, os.path.join(cert_dir, 'server.json'))
 
     print(f'''
 ╔══════════════════════════════════════════════════════════╗
@@ -903,7 +903,7 @@ def do_init(cert_dir: str):
 ╠══════════════════════════════════════════════════════════╣
 ║  证书:       {cert_path}
 ║  私钥:       {key_path}
-║  配置:       {os.path.join(cert_dir, 'config.json')}
+║  配置:       {os.path.join(cert_dir, 'server.json')}
 ╠══════════════════════════════════════════════════════════╣
 ║  Token:       {token}
 ║  Fingerprint: {fp}
@@ -916,7 +916,7 @@ def do_init(cert_dir: str):
 async def run_server(args):
     """启动 WSS Server + Local Proxy。"""
     cert_dir = args.cert_dir
-    config_path = os.path.join(cert_dir, 'config.json')
+    config_path = os.path.join(cert_dir, 'server.json')
 
     if not os.path.exists(config_path):
         print(f'Error: {config_path} not found. Run --init first.')
@@ -967,9 +967,9 @@ async def run_server(args):
 def main():
     parser = argparse.ArgumentParser(description='WSS 隧道服务端（Linux 端）')
     parser.add_argument('--init', action='store_true', help='首次初始化：生成证书和 Token')
-    parser.add_argument('--wss-port', type=int, default=9443, help='WSS Server 端口 (默认 9443)')
+    parser.add_argument('--wss-port', type=int, default=8044, help='WSS Server 端口 (默认 8044)')
     parser.add_argument('--wss-bind', default='0.0.0.0', help='WSS Server 绑定地址 (默认 0.0.0.0)')
-    parser.add_argument('--proxy-port', type=int, default=18080, help='Local Proxy 端口 (默认 18080)')
+    parser.add_argument('--proxy-port', type=int, default=8054, help='Local Proxy 端口 (默认 8054)')
     parser.add_argument('--proxy-bind', default='127.0.0.1', help='Local Proxy 绑定地址 (默认 127.0.0.1)')
     parser.add_argument('--cert-dir', default=DEFAULT_CERT_DIR, help=f'证书目录 (默认 {DEFAULT_CERT_DIR})')
     args = parser.parse_args()
@@ -988,23 +988,23 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: 验证 --init 功能**
+- [x] **Step 2: 验证 --init 功能**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python tunnel_server.py --init --cert-dir /tmp/test-wss-tunnel
 ```
 
-预期：打印证书路径、Token、Fingerprint。检查 `/tmp/test-wss-tunnel/` 下有 `cert.pem`、`key.pem`、`config.json`。
+预期：打印证书路径、Token、Fingerprint。检查 `/tmp/test-wss-tunnel/` 下有 `cert.pem`、`key.pem`、`server.json`。
 
-- [ ] **Step 3: 验证 server 启动（快速退出）**
+- [x] **Step 3: 验证 server 启动（快速退出）**
 
 ```bash
-cd dev_project/proxy-tunnel/wss-tunnel && timeout 3 python tunnel_server.py --cert-dir /tmp/test-wss-tunnel --wss-port 19443 --proxy-port 19080 || true
+cd dev_project/proxy-tunnel/wss-tunnel && timeout 3 python tunnel_server.py --cert-dir /tmp/test-wss-tunnel --wss-port 8044 --proxy-port 8054 || true
 ```
 
 预期：看到「WSS 隧道服务端已启动」输出，3 秒后 timeout 退出。
 
-- [ ] **Step 4: 清理测试文件并 Commit**
+- [x] **Step 4: 清理测试文件并 Commit**
 
 ```bash
 rm -rf /tmp/test-wss-tunnel
@@ -1019,7 +1019,7 @@ git commit -m "feat(wss-tunnel): add main() entry with --init and server startup
 **Files:**
 - Create: `dev_project/proxy-tunnel/wss-tunnel/tunnel_client.py`
 
-- [ ] **Step 1: 编写完整的 tunnel_client.py**
+- [x] **Step 1: 编写完整的 tunnel_client.py**
 
 创建 `dev_project/proxy-tunnel/wss-tunnel/tunnel_client.py`:
 
@@ -1031,7 +1031,7 @@ WSS 隧道客户端（Windows 端运行）
 
 用法:
     python tunnel_client.py --host <linux-ip> --token <token> --fingerprint <SHA256:xxxx>
-    python tunnel_client.py --host 192.168.1.100 --port 9443 --token abc123 --fingerprint SHA256:def456
+    python tunnel_client.py --host 192.168.1.100 --port 8044 --token abc123 --fingerprint SHA256:def456
 """
 
 import argparse
@@ -1173,7 +1173,7 @@ class TunnelClient:
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(host, port),
-                timeout=10,
+                timeout=60,
             )
             self.connections[stream_id] = (reader, writer)
             await self.ws.send(make_msg('connect_ok', stream_id))
@@ -1244,7 +1244,7 @@ class TunnelClient:
 def main():
     parser = argparse.ArgumentParser(description='WSS 隧道客户端（Windows 端）')
     parser.add_argument('--host', required=True, help='Linux 服务器地址')
-    parser.add_argument('--port', type=int, default=9443, help='WSS Server 端口 (默认 9443)')
+    parser.add_argument('--port', type=int, default=8044, help='WSS Server 端口 (默认 8044)')
     parser.add_argument('--token', required=True, help='鉴权 Token')
     parser.add_argument('--fingerprint', required=True, help='证书指纹 (SHA256:xxxx)')
     parser.add_argument('--no-reconnect', action='store_true', help='禁用自动重连')
@@ -1279,7 +1279,7 @@ if __name__ == '__main__':
     main()
 ```
 
-- [ ] **Step 2: 语法检查**
+- [x] **Step 2: 语法检查**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -c "from tunnel_client import TunnelClient; print('OK')"
@@ -1287,7 +1287,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -c "from tunnel_client import T
 
 预期：`OK`
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tunnel_client.py
@@ -1301,7 +1301,7 @@ git commit -m "feat(wss-tunnel): add tunnel_client.py - WSS client with reconnec
 **Files:**
 - Create: `dev_project/proxy-tunnel/wss-tunnel/tests/test_integration.py`
 
-- [ ] **Step 1: 编写集成测试**
+- [x] **Step 1: 编写集成测试**
 
 创建 `dev_project/proxy-tunnel/wss-tunnel/tests/test_integration.py`:
 
@@ -1333,7 +1333,7 @@ def cert_dir():
         generate_self_signed_cert(d)
         token = generate_token()
         fp = get_cert_fingerprint(os.path.join(d, 'cert.pem'))
-        save_config({'token': token, 'fingerprint': fp}, os.path.join(d, 'config.json'))
+        save_config({'token': token, 'fingerprint': fp}, os.path.join(d, 'server.json'))
         yield d, token, fp
 
 
@@ -1557,19 +1557,19 @@ async def test_disguise_page(cert_dir):
 
     writer.close()
 
-    assert b'Internal Dashboard' in response
+    assert b'Test Dashboard' in response
     assert b'nginx/1.24.0' in response
 
     wss_server.close()
 ```
 
-- [ ] **Step 2: 安装测试依赖**
+- [x] **Step 2: 安装测试依赖**
 
 ```bash
 pip install pytest pytest-asyncio
 ```
 
-- [ ] **Step 3: 运行集成测试**
+- [x] **Step 3: 运行集成测试**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_integration.py -v --timeout=30
@@ -1596,7 +1596,7 @@ def anyio_backend():
 asyncio_mode = "auto"
 ```
 
-- [ ] **Step 4: Commit**
+- [x] **Step 4: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/tests/ \
@@ -1611,7 +1611,7 @@ git commit -m "test(wss-tunnel): add integration tests for HTTP, CONNECT, and di
 **Files:**
 - Create: `dev_project/proxy-tunnel/wss-tunnel/setup_linux.sh`
 
-- [ ] **Step 1: 编写辅助脚本**
+- [x] **Step 1: 编写辅助脚本**
 
 创建 `dev_project/proxy-tunnel/wss-tunnel/setup_linux.sh`:
 
@@ -1620,7 +1620,7 @@ git commit -m "test(wss-tunnel): add integration tests for HTTP, CONNECT, and di
 # WSS 隧道方案 — Linux 端代理配置脚本
 # 用法: source setup_linux.sh [proxy_port]
 
-PROXY_PORT="${1:-18080}"
+PROXY_PORT="${1:-8054}"
 PROXY_URL="http://127.0.0.1:${PROXY_PORT}"
 
 echo "=== WSS 隧道代理配置 ==="
@@ -1654,13 +1654,13 @@ echo "验证: curl http://httpbin.org/ip"
 echo "取消: unset http_proxy https_proxy HTTP_PROXY HTTPS_PROXY no_proxy NO_PROXY"
 ```
 
-- [ ] **Step 2: 设置执行权限**
+- [x] **Step 2: 设置执行权限**
 
 ```bash
 chmod +x dev_project/proxy-tunnel/wss-tunnel/setup_linux.sh
 ```
 
-- [ ] **Step 3: Commit**
+- [x] **Step 3: Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/setup_linux.sh
@@ -1677,7 +1677,7 @@ git commit -m "feat(wss-tunnel): add Linux proxy setup helper script"
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tunnel_server.py` (可能)
 - Modify: `dev_project/proxy-tunnel/wss-tunnel/tunnel_client.py` (可能)
 
-- [ ] **Step 1: 确认 websockets 版本**
+- [x] **Step 1: 确认 websockets 版本**
 
 ```bash
 python -c "import websockets; print(websockets.__version__)"
@@ -1691,7 +1691,7 @@ python -c "import websockets; print(websockets.__version__)"
 | `process_request` | `callback(path, headers)` 返回 tuple 拦截 | `callback(ws, request)` 返回 Response 拦截 |
 | `websockets.connect()` | `subprotocols=` | `additional_headers=` 或 `subprotocols=` |
 
-- [ ] **Step 2: 如果 websockets >= 13，调整 API**
+- [x] **Step 2: 如果 websockets >= 13，调整 API**
 
 检查 `tunnel_server.py` 中 `WSSServer` 的 `_handler` 和 `_process_http_request` 签名：
 
@@ -1708,7 +1708,7 @@ async def _handler(self, websocket):
 
 如果需要修改，检查新版文档并调整签名和返回值格式。
 
-- [ ] **Step 3: 重新运行集成测试**
+- [x] **Step 3: 重新运行集成测试**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_integration.py -v --timeout=30
@@ -1716,7 +1716,7 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/test_integratio
 
 预期：3 tests PASSED
 
-- [ ] **Step 4: 如有修改则 Commit**
+- [x] **Step 4: 如有修改则 Commit**
 
 ```bash
 git add dev_project/proxy-tunnel/wss-tunnel/
@@ -1730,7 +1730,7 @@ git commit -m "fix(wss-tunnel): ensure websockets API compatibility with install
 **Files:**
 - Modify: `dev_project/proxy-tunnel/wss-tunnel-design.md` (如有变化)
 
-- [ ] **Step 1: 运行全部测试**
+- [x] **Step 1: 运行全部测试**
 
 ```bash
 cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/ -v --timeout=30
@@ -1738,30 +1738,30 @@ cd dev_project/proxy-tunnel/wss-tunnel && python -m pytest tests/ -v --timeout=3
 
 预期：所有测试 PASSED
 
-- [ ] **Step 2: 手动端到端验证**
+- [x] **Step 2: 手动端到端验证**
 
 ```bash
 # 终端 1: 初始化 + 启动 server
 cd dev_project/proxy-tunnel/wss-tunnel
 python tunnel_server.py --init --cert-dir /tmp/wss-test
-python tunnel_server.py --cert-dir /tmp/wss-test --wss-port 19443 --proxy-port 19080
+python tunnel_server.py --cert-dir /tmp/wss-test --wss-port 8044 --proxy-port 8054
 
 # 终端 2: 查看 config 获取 token 和 fingerprint，启动 client
-cat /tmp/wss-test/config.json
-python tunnel_client.py --host 127.0.0.1 --port 19443 --token <token> --fingerprint <fingerprint>
+cat /tmp/wss-test/server.json
+python tunnel_client.py --host 127.0.0.1 --port 8044 --token <token> --fingerprint <fingerprint>
 
 # 终端 3: 测试代理
-curl -x http://127.0.0.1:19080 http://httpbin.org/ip
-curl -x http://127.0.0.1:19080 https://httpbin.org/ip
+curl -x http://127.0.0.1:8054 http://httpbin.org/ip
+curl -x http://127.0.0.1:8054 https://httpbin.org/ip
 
 # 测试伪装页面
-curl -k https://127.0.0.1:19443/
+curl -k https://127.0.0.1:8044/
 
 # 清理
 rm -rf /tmp/wss-test
 ```
 
-- [ ] **Step 3: Final Commit**
+- [x] **Step 3: Final Commit**
 
 ```bash
 git add -A dev_project/proxy-tunnel/

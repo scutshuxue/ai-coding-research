@@ -40,12 +40,12 @@ Windows (有网络) ──SSH──→ Linux (网络隔离)
 graph LR
     subgraph Linux["Linux 服务端（网络隔离）"]
         APP["应用层<br/>curl / Chrome / Java"]
-        LP["Local Proxy<br/>127.0.0.1:18080"]
-        TS["WSS Server<br/>0.0.0.0:9443<br/>(TLS 加密)"]
+        LP["Local Proxy<br/>127.0.0.1:8054"]
+        TS["WSS Server<br/>0.0.0.0:8044<br/>(TLS 加密)"]
     end
 
     subgraph Windows["Windows（有网络）"]
-        TC["WSS Client<br/>主动连接 Linux:9443"]
+        TC["WSS Client<br/>主动连接 Linux:8044"]
         OUT["出网请求"]
     end
 
@@ -76,8 +76,8 @@ graph LR
 
 | 组件 | 运行位置 | 监听地址 | 职责 |
 |------|----------|----------|------|
-| **WSS Server** | Linux | `0.0.0.0:9443` | TLS 加密端点；接受 Windows 客户端连接；对普通访问返回伪装网页 |
-| **Local Proxy** | Linux | `127.0.0.1:18080` | HTTP/HTTPS 代理入口；应用层统一配置此地址 |
+| **WSS Server** | Linux | `0.0.0.0:8044` | TLS 加密端点；接受 Windows 客户端连接；对普通访问返回伪装网页 |
+| **Local Proxy** | Linux | `127.0.0.1:8054` | HTTP/HTTPS 代理入口；应用层统一配置此地址 |
 | **WSS Client** | Windows | — (主动连接) | 连接 Linux WSS Server；接收代理请求并执行出网 |
 
 ### 2.3 与现有方案对比
@@ -88,7 +88,7 @@ graph LR
 | 端口扫描特征 | HTTP 代理响应 | **TLS/HTTPS 网页** |
 | 流量可分析 | 明文代理流量 | **TLS 加密，不可分析** |
 | 连接方向 | Windows → Linux (SSH) | **Windows → Linux (WSS)** |
-| 新增端口 | 18080（明文代理） | 9443（TLS）+ 18080（仅 127.0.0.1） |
+| 新增端口 | 8054（明文代理） | 8044（TLS）+ 8054（仅 127.0.0.1） |
 | 杀软/EDR 风险 | 低 | **低（纯 Python 脚本，合法库）** |
 
 ---
@@ -150,7 +150,7 @@ graph TD
 ```mermaid
 sequenceDiagram
     participant App as Linux 应用
-    participant LP as Local Proxy<br/>127.0.0.1:18080
+    participant LP as Local Proxy<br/>127.0.0.1:8054
     participant TS as WSS Server
     participant TC as WSS Client<br/>(Windows)
     participant Target as 目标服务器
@@ -218,7 +218,7 @@ sequenceDiagram
 
 ```mermaid
 flowchart TD
-    REQ["请求到达 :9443"] --> TLS["TLS 握手完成"]
+    REQ["请求到达 :8044"] --> TLS["TLS 握手完成"]
     TLS --> PATH{"请求路径?"}
     PATH -->|"/ 或其他普通路径"| FAKE["返回伪装 HTML 页面<br/>(模拟内部 Dashboard)"]
     PATH -->|"/ws"| UPGRADE{"WebSocket 升级请求?"}
@@ -262,7 +262,7 @@ flowchart LR
 
 ### 4.3 伪装策略
 
-当扫描器或浏览器直接访问 `:9443` 时，返回一个静态 HTML 页面：
+当扫描器或浏览器直接访问 `:8044` 时，返回一个静态 HTML 页面：
 
 ```
 HTTP/1.1 200 OK
@@ -271,11 +271,10 @@ Server: nginx/1.24.0
 
 <!DOCTYPE html>
 <html>
-<head><title>Internal Dashboard</title></head>
+<head><title>Test Dashboard</title></head>
 <body>
     <h1>System Status</h1>
-    <p>All services operational.</p>
-    <p>Last updated: 2024-01-15 10:30:00 UTC</p>
+    <p>All services passed.</p>
 </body>
 </html>
 ```
@@ -334,12 +333,21 @@ dev_project/proxy-tunnel/
 ├── proxy_server.py                # 现有 SSH 方案代理
 ├── linux-setup.sh                 # 现有 Linux 配置脚本
 ├── wss-tunnel-design.md           # 本设计文档
+├── wss-tunnel-plan.md             # WSS 隧道实施计划
 │
 └── wss-tunnel/                    # WSS 隧道方案
     ├── tunnel_server.py           # Linux 端：WSS Server + Local Proxy
     ├── tunnel_client.py           # Windows 端：WSS Client + 出网执行
     ├── tunnel_common.py           # 共享：消息协议、证书生成、Token 工具
-    └── setup_linux.sh             # Linux 端启动辅助脚本
+    ├── setup_linux.sh             # Linux 端启动辅助脚本
+    ├── pyproject.toml             # 项目配置
+    ├── wss-tunnel-guide.md        # WSS 隧道使用指南
+    ├── deps/                      # 离线依赖包
+    └── tests/                     # 测试
+        ├── __init__.py
+        ├── conftest.py
+        ├── test_common.py
+        └── test_integration.py
 ```
 
 ### 5.2 tunnel_common.py — 共享模块
@@ -406,12 +414,12 @@ classDiagram
 ```mermaid
 graph TD
     subgraph Server["tunnel_server.py (单个 asyncio 进程)"]
-        subgraph WSS["WSS Server (:9443)"]
+        subgraph WSS["WSS Server (:8044)"]
             HTTPS_HANDLER["HTTPS 请求处理<br/>伪装页面响应"]
             WS_HANDLER["WebSocket 处理<br/>Token 鉴权<br/>消息收发"]
         end
 
-        subgraph Proxy["Local Proxy (127.0.0.1:18080)"]
+        subgraph Proxy["Local Proxy (127.0.0.1:8054)"]
             HTTP_PROXY["HTTP 代理<br/>GET/POST/PUT/DELETE..."]
             CONNECT_PROXY["CONNECT 代理<br/>HTTPS 隧道"]
         end
@@ -437,17 +445,18 @@ graph TD
 ```mermaid
 classDiagram
     class TunnelManager {
-        -ws_connection: WebSocket
-        -streams: dict[str, asyncio.Queue]
-        -connected: asyncio.Event
+        -_ws: WebSocket
+        -_streams: dict[str, asyncio.Queue]
+        -_connected: asyncio.Event
         +register_client(ws)
         +unregister_client()
         +send_connect(id, host, port)
         +send_data(id, payload)
         +send_close(id)
         +wait_response(id) dict
-        +dispatch_incoming(msg)
+        +dispatch(msg)
     }
+    note for TunnelManager "register_client / unregister_client / dispatch\n均为同步方法（使用 put_nowait）"
 
     class LocalProxy {
         -tunnel: TunnelManager
@@ -464,10 +473,12 @@ classDiagram
         -ssl_context: ssl.SSLContext
         -token: str
         +start(bind, port)
-        +handle_connection(websocket)
+        +_ws_handler(ws)
+        +_process_request(connection, request) Response|None
+        +_select_subprotocol(connection, subprotocols) str
         -_serve_disguise_page(path) bytes
-        -_verify_token(ws) bool
     }
+    note for WSSServer "websockets v14+ API\nserve() 使用 server_header='nginx/1.24.0'\nmax_size=4*1024*1024"
 
     TunnelManager --> WSSServer : 被 WSS 连接驱动
     TunnelManager --> LocalProxy : 被代理请求驱动
@@ -477,7 +488,7 @@ classDiagram
 
 ```mermaid
 flowchart TD
-    CLIENT["应用连接 127.0.0.1:18080"] --> PARSE["解析请求行"]
+    CLIENT["应用连接 127.0.0.1:8054"] --> PARSE["解析请求行"]
     PARSE --> METHOD{"请求方法?"}
 
     METHOD -->|"CONNECT"| CONNECT_FLOW["HTTPS 隧道流程"]
@@ -492,7 +503,7 @@ flowchart TD
     SEND_CONNECT --> WAIT{"等待响应"}
     WAIT -->|"connect_ok"| RELAY["双向 data 转发"]
     WAIT -->|"connect_fail"| ERR502_2["返回 502<br/>目标不可达"]
-    WAIT -->|"超时 10s"| ERR504["返回 504<br/>Gateway Timeout"]
+    WAIT -->|"超时 60s"| ERR504["返回 504<br/>Gateway Timeout"]
 
     RELAY --> DONE["连接关闭<br/>发送 close 消息"]
 
@@ -509,7 +520,7 @@ flowchart TD
 ```mermaid
 graph TD
     subgraph Client["tunnel_client.py (单个 asyncio 进程)"]
-        WS_CLIENT["WSS Client<br/>连接 Linux:9443"]
+        WS_CLIENT["WSS Client<br/>连接 Linux:8044"]
         DISPATCHER["消息分发器<br/>按 id 路由"]
         CONN_POOL["连接池<br/>id → TCP Socket"]
         RECONNECT["断线重连<br/>指数退避"]
@@ -523,6 +534,14 @@ graph TD
     style Client fill:#e6a23c,color:#fff
     style INTERNET fill:#67c23a,color:#fff
 ```
+
+**核心类设计：**
+
+- `self._connections: dict` — 活跃 TCP 连接映射
+- `self._ws` — WebSocket 连接实例
+- `self._tasks: set[asyncio.Task]` — 异步任务跟踪集合
+- `_verify_fingerprint()` — 指纹不匹配时抛出 `RuntimeError`（非返回 bool）
+- `websockets.connect()` 额外参数：`additional_headers={"User-Agent": "Mozilla/5.0"}`，`max_size=4*1024*1024`
 
 **消息处理逻辑：**
 
@@ -584,7 +603,7 @@ sequenceDiagram
     Admin->>Linux: python tunnel_server.py --init
     Linux->>Linux: 生成 ~/.wss-tunnel/cert.pem
     Linux->>Linux: 生成 ~/.wss-tunnel/key.pem
-    Linux->>Linux: 生成 ~/.wss-tunnel/config.json (含 Token)
+    Linux->>Linux: 生成 ~/.wss-tunnel/server.json（含 Token）
     Linux-->>Admin: 打印 Token 和证书指纹
 
     Note over Admin: 记录 Token 和指纹
@@ -604,20 +623,20 @@ sequenceDiagram
 # ===== Linux 端 =====
 python tunnel_server.py
 # 输出:
-# WSS Server listening on 0.0.0.0:9443 (TLS)
-# Local Proxy listening on 127.0.0.1:18080
+# WSS Server listening on 0.0.0.0:8044 (TLS)
+# Local Proxy listening on 127.0.0.1:8054
 # Waiting for tunnel client...
 
 # ===== Windows 端 =====
-python tunnel_client.py --host <linux-ip> --port 9443 \
+python tunnel_client.py --host <linux-ip> --port 8044 \
     --token <token> --fingerprint <SHA256:xxxx>
 # 输出:
-# Connected to wss://linux-ip:9443/ws
+# Connected to wss://linux-ip:8044/ws
 # Tunnel established, ready to relay.
 
 # ===== Linux 端验证 =====
-curl -x http://127.0.0.1:18080 http://httpbin.org/ip
-curl -x http://127.0.0.1:18080 https://httpbin.org/ip
+curl -x http://127.0.0.1:8054 http://httpbin.org/ip
+curl -x http://127.0.0.1:8054 https://httpbin.org/ip
 ```
 
 ### 6.3 命令行参数
@@ -627,9 +646,9 @@ curl -x http://127.0.0.1:18080 https://httpbin.org/ip
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `--init` | — | 首次初始化：生成证书和 Token |
-| `--wss-port` | 9443 | WSS Server 监听端口 |
+| `--wss-port` | 8044 | WSS Server 监听端口 |
 | `--wss-bind` | 0.0.0.0 | WSS Server 绑定地址 |
-| `--proxy-port` | 18080 | Local Proxy 监听端口 |
+| `--proxy-port` | 8054 | Local Proxy 监听端口 |
 | `--proxy-bind` | 127.0.0.1 | Local Proxy 绑定地址（仅本机） |
 | `--cert-dir` | ~/.wss-tunnel | 证书和配置存储目录 |
 
@@ -638,7 +657,7 @@ curl -x http://127.0.0.1:18080 https://httpbin.org/ip
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
 | `--host` | （必填） | Linux 服务器地址 |
-| `--port` | 9443 | WSS Server 端口 |
+| `--port` | 8044 | WSS Server 端口 |
 | `--token` | （必填） | 鉴权 Token |
 | `--fingerprint` | （必填） | 证书指纹（SHA256） |
 | `--reconnect` | true | 断线自动重连 |
@@ -650,18 +669,18 @@ curl -x http://127.0.0.1:18080 https://httpbin.org/ip
 
 ```bash
 # 环境变量（curl / wget / pip / npm）
-export http_proxy=http://127.0.0.1:18080
-export https_proxy=http://127.0.0.1:18080
+export http_proxy=http://127.0.0.1:8054
+export https_proxy=http://127.0.0.1:8054
 export no_proxy=localhost,127.0.0.1,::1
 
 # Playwright MCP（Chromium）
---proxy-server http://127.0.0.1:18080
+--proxy-server http://127.0.0.1:8054
 
 # Java
--Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=18080
+-Dhttp.proxyHost=127.0.0.1 -Dhttp.proxyPort=8054
 
 # Git
-git config --global http.proxy http://127.0.0.1:18080
+git config --global http.proxy http://127.0.0.1:8054
 ```
 
 > **注意**：WSS 方案的 Local Proxy 不需要认证（仅绑定 127.0.0.1），所以代理 URL 中无需 `user:pass@`，比 SSH 方案更简洁。
@@ -755,13 +774,13 @@ flowchart TD
 
 ```mermaid
 flowchart TD
-    START["应用无法通过代理出网"] --> CHECK1{"curl -x http://127.0.0.1:18080<br/>http://httpbin.org/ip"}
+    START["应用无法通过代理出网"] --> CHECK1{"curl -x http://127.0.0.1:8054<br/>http://httpbin.org/ip"}
 
     CHECK1 -->|"Connection refused"| FIX1["tunnel_server.py 未运行<br/>→ 启动 tunnel_server.py"]
 
     CHECK1 -->|"502 Bad Gateway"| CHECK2{"Windows 端<br/>tunnel_client.py 状态?"}
     CHECK2 -->|"未运行"| FIX2["启动 tunnel_client.py"]
-    CHECK2 -->|"运行中但显示 Reconnecting"| CHECK3{"Linux :9443 端口可达?"}
+    CHECK2 -->|"运行中但显示 Reconnecting"| CHECK3{"Linux :8044 端口可达?"}
     CHECK3 -->|"不可达"| FIX3["检查防火墙<br/>或 tunnel_server 是否监听"]
     CHECK3 -->|"可达"| FIX4["检查 Token/指纹<br/>是否匹配"]
 
@@ -784,20 +803,20 @@ flowchart TD
 ps aux | grep tunnel_server
 
 # Linux 端 —— 检查 WSS 端口
-nc -z 127.0.0.1 9443 -w 3 && echo "WSS OK" || echo "WSS FAIL"
+nc -z 127.0.0.1 8044 -w 3 && echo "WSS OK" || echo "WSS FAIL"
 
 # Linux 端 —— 检查代理端口
-nc -z 127.0.0.1 18080 -w 3 && echo "Proxy OK" || echo "Proxy FAIL"
+nc -z 127.0.0.1 8054 -w 3 && echo "Proxy OK" || echo "Proxy FAIL"
 
 # Linux 端 —— 测试伪装页面（应该看到 HTML）
-curl -k https://127.0.0.1:9443/
+curl -k https://127.0.0.1:8044/
 
 # Linux 端 —— 测试代理
-curl -x http://127.0.0.1:18080 http://httpbin.org/ip
-curl -x http://127.0.0.1:18080 https://httpbin.org/ip
+curl -x http://127.0.0.1:8054 http://httpbin.org/ip
+curl -x http://127.0.0.1:8054 https://httpbin.org/ip
 
 # Windows 端 —— 检查到 Linux 的连通性
-Test-NetConnection -ComputerName <linux-ip> -Port 9443
+Test-NetConnection -ComputerName <linux-ip> -Port 8044
 ```
 
 ---
@@ -812,7 +831,7 @@ Test-NetConnection -ComputerName <linux-ip> -Port 9443
 | 中间人攻击 | 证书指纹 pinning |
 | 未授权使用隧道 | Token 鉴权 + TLS 双向加密 |
 | 本地代理被滥用 | 绑定 `127.0.0.1`，仅本机可达 |
-| Token 泄露 | 存储在 `~/.wss-tunnel/config.json`，权限 600 |
+| Token 泄露 | 存储在 `~/.wss-tunnel/server.json`，权限 600 |
 | 杀软/EDR 误报 | 纯 Python 脚本运行，不打包 exe；合法 PyPI 库 |
 
 ---
@@ -838,11 +857,11 @@ python tunnel_server.py
 python tunnel_client.py --host <linux-ip> --token <token> --fingerprint <fingerprint>
 
 # Linux: 配置代理
-export http_proxy=http://127.0.0.1:18080
-export https_proxy=http://127.0.0.1:18080
+export http_proxy=http://127.0.0.1:8054
+export https_proxy=http://127.0.0.1:8054
 export no_proxy=localhost,127.0.0.1,::1
 
 # Linux: 验证
-curl -x http://127.0.0.1:18080 http://httpbin.org/ip
-curl -x http://127.0.0.1:18080 https://httpbin.org/ip
+curl -x http://127.0.0.1:8054 http://httpbin.org/ip
+curl -x http://127.0.0.1:8054 https://httpbin.org/ip
 ```
