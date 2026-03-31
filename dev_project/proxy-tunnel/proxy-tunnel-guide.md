@@ -71,7 +71,9 @@ graph LR
 dev_project/proxy-tunnel/
 ├── proxy-tunnel-guide.md   # 本文档
 ├── proxy_server.py         # Windows 端正向代理（Python 3，无第三方依赖）
-└── linux-setup.sh          # Linux 端代理环境变量配置脚本
+├── linux-setup.sh          # Linux 端代理环境变量配置脚本
+├── wss-tunnel-design.md    # WSS 隧道方案详细设计（隐蔽性升级，替代 SSH -R）
+└── wss-tunnel-plan.md      # WSS 隧道方案实施计划
 ```
 
 ---
@@ -230,6 +232,43 @@ git config --global https.proxy http://proxy:proxy123@127.0.0.1:18080
 git config --global --unset http.proxy
 git config --global --unset https.proxy
 ```
+
+### 8. Claude Code（MCP SSE/HTTP 连接）
+
+Claude Code 调用 MCP Server 时（SSE 或 HTTP transport），通过标准 HTTP 代理环境变量路由请求。
+
+> **注意**：Claude Code 不支持 SOCKS 代理，仅支持 HTTP/HTTPS 代理。
+
+#### 方式 A：settings.json（推荐，持久化）
+
+在 `~/.claude/settings.json` 中添加 `env` 字段：
+
+```json
+{
+  "env": {
+    "HTTP_PROXY": "http://127.0.0.1:18080",
+    "HTTPS_PROXY": "http://127.0.0.1:18080",
+    "NO_PROXY": "localhost,127.0.0.1"
+  }
+}
+```
+
+#### 方式 B：Shell 环境变量
+
+启动 Claude Code 前设置（或 `source linux-setup.sh`）：
+
+```bash
+export HTTP_PROXY=http://127.0.0.1:18080
+export HTTPS_PROXY=http://127.0.0.1:18080
+export NO_PROXY=localhost,127.0.0.1
+```
+
+#### 说明
+
+- 代理对 **所有** MCP 连接全局生效，`.mcp.json` 中没有单独的 proxy 字段
+- 通过 SSH 隧道连接（来源 `127.0.0.1`），自动免认证，无需在 URL 中带账号密码
+- 如果代理使用自签证书，需额外设置：`NODE_EXTRA_CA_CERTS=/path/to/ca.pem`
+- SSE transport 已被标记为 deprecated，新版推荐使用 `--transport http`
 
 ---
 
