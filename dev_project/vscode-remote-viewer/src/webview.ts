@@ -154,8 +154,9 @@ function getHtml(): string {
     padding: 0 8px; height: 22px; flex-shrink: 0;
     font-size: 11px; color: #666;
   }
-  #status-left { display: flex; gap: 12px; }
+  #status-left { display: flex; gap: 12px; align-items: center; }
   #status-right { display: flex; gap: 12px; }
+  #hints { color: #555; cursor: help; border-left: 1px solid #444; padding-left: 10px; }
 </style>
 </head>
 <body>
@@ -192,6 +193,7 @@ function getHtml(): string {
     <div id="status-left">
       <span id="conn-status">未连接</span>
       <span id="tab-count"></span>
+      <span id="hints" title="点击=操作页面 | Ctrl+I=中文输入 | Ctrl+V=粘贴 | 地址栏回车=导航">点击操作 | Ctrl+I 中文 | Ctrl+V 粘贴</span>
     </div>
     <div id="status-right">
       <span id="fps-counter"></span>

@@ -1,0 +1,7 @@
+# 离线安装包（太大，不提交到 git）
+packages/*.zip
+packages/*.vsix
+
+# 打包产出
+*.zip
+!packages/DOWNLOAD.md
