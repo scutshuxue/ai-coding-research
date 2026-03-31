@@ -39,10 +39,10 @@ logger = logging.getLogger("tunnel_server")
 DISGUISE_PAGE = b"""\
 <!DOCTYPE html>
 <html>
-<head><title>Internal Dashboard</title></head>
+<head><title>Test Dashboard</title></head>
 <body>
 <h1>System Status</h1>
-<p>All services operational.</p>
+<p>All services passed.</p>
 </body>
 </html>"""
 
@@ -561,9 +561,9 @@ def main() -> None:
         "--cert-dir", default="~/.wss-tunnel",
         help="Directory for cert, key, and config (default: ~/.wss-tunnel)",
     )
-    parser.add_argument("--wss-port", type=int, default=9443)
+    parser.add_argument("--wss-port", type=int, default=8044)
     parser.add_argument("--wss-bind", default="0.0.0.0")
-    parser.add_argument("--proxy-port", type=int, default=18080)
+    parser.add_argument("--proxy-port", type=int, default=8054)
     parser.add_argument("--proxy-bind", default="127.0.0.1")
     parser.add_argument(
         "-v", "--verbose", action="store_true",

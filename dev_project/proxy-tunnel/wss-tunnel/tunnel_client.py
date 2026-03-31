@@ -264,7 +264,7 @@ def main() -> None:
         description="WSS Tunnel Client — connect to Linux WSS server and proxy outbound traffic"
     )
     parser.add_argument("--host", required=True, help="Linux server address")
-    parser.add_argument("--port", type=int, default=9443, help="WSS port (default: 9443)")
+    parser.add_argument("--port", type=int, default=9443, help="WSS port (default: 8044)")
     parser.add_argument("--token", required=True, help="Auth token")
     parser.add_argument("--fingerprint", required=True, help="Cert fingerprint SHA256:xxx")
     parser.add_argument(
