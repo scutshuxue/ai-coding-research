@@ -164,7 +164,7 @@ class TunnelClient:
         try:
             reader, writer = await asyncio.wait_for(
                 asyncio.open_connection(host, port),
-                timeout=10,
+                timeout=60,
             )
             self._connections[sid] = (reader, writer)
             logger.info("Connected to target %s:%d (stream %s)", host, port, sid)

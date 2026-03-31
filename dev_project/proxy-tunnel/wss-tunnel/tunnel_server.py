@@ -33,6 +33,14 @@ from tunnel_common import (
 logger = logging.getLogger("tunnel_server")
 
 # ---------------------------------------------------------------------------
+# Timeout constants (seconds)
+# ---------------------------------------------------------------------------
+HEADER_READ_TIMEOUT = 60        # 读取请求行/请求头
+CONNECT_TIMEOUT = 60            # 等待 tunnel 返回 connect_ok/fail
+BODY_READ_TIMEOUT = 60          # 读取请求体
+CLIENT_WAIT_TIMEOUT = 120       # 等待 WSS 客户端连接
+
+# ---------------------------------------------------------------------------
 # Disguise pages
 # ---------------------------------------------------------------------------
 
@@ -104,7 +112,7 @@ class TunnelManager:
         else:
             logger.debug("dispatch: unknown stream %s (type=%s)", sid, msg.get("type"))
 
-    async def wait_for_client(self, timeout: float = 30.0) -> bool:
+    async def wait_for_client(self, timeout: float = CLIENT_WAIT_TIMEOUT) -> bool:
         try:
             await asyncio.wait_for(self._connected.wait(), timeout)
             return True
@@ -255,7 +263,7 @@ class LocalProxy:
         writer: asyncio.StreamWriter,
     ) -> None:
         # Read request line
-        request_line = await asyncio.wait_for(reader.readline(), timeout=10)
+        request_line = await asyncio.wait_for(reader.readline(), timeout=HEADER_READ_TIMEOUT)
         if not request_line:
             return
         request_line_str = request_line.decode("utf-8", errors="replace").strip()
@@ -269,7 +277,7 @@ class LocalProxy:
         # Read headers
         headers_raw = []
         while True:
-            line = await asyncio.wait_for(reader.readline(), timeout=10)
+            line = await asyncio.wait_for(reader.readline(), timeout=HEADER_READ_TIMEOUT)
             if line in (b"\r\n", b"\n", b""):
                 break
             headers_raw.append(line)
@@ -306,7 +314,7 @@ class LocalProxy:
             await self.tunnel.send(make_msg("connect", sid, host=host, port=port))
 
             # Wait for connect_ok or connect_fail
-            msg = await asyncio.wait_for(self.tunnel.streams[sid].get(), timeout=10)
+            msg = await asyncio.wait_for(self.tunnel.streams[sid].get(), timeout=CONNECT_TIMEOUT)
             if msg is None:
                 writer.write(b"HTTP/1.1 502 Bad Gateway\r\n\r\n")
                 await writer.drain()
@@ -376,7 +384,7 @@ class LocalProxy:
             # Connect through tunnel
             await self.tunnel.send(make_msg("connect", sid, host=host, port=port))
 
-            msg = await asyncio.wait_for(self.tunnel.streams[sid].get(), timeout=10)
+            msg = await asyncio.wait_for(self.tunnel.streams[sid].get(), timeout=CONNECT_TIMEOUT)
             if msg is None or msg["type"] != "connect_ok":
                 writer.write(b"HTTP/1.1 502 Bad Gateway\r\n\r\n")
                 await writer.drain()
@@ -398,7 +406,7 @@ class LocalProxy:
 
             if content_length > 0:
                 body = await asyncio.wait_for(
-                    reader.readexactly(content_length), timeout=10
+                    reader.readexactly(content_length), timeout=BODY_READ_TIMEOUT
                 )
                 request += body
 
