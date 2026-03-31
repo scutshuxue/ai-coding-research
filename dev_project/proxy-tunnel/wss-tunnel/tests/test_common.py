@@ -29,7 +29,7 @@ class TestMakeMsg:
         raw = make_msg("connect", "abcd1234abcd1234", target_host="127.0.0.1", target_port=22)
         msg = json.loads(raw)
         assert msg["type"] == "connect"
-        assert msg["stream_id"] == "abcd1234abcd1234"
+        assert msg["id"] == "abcd1234abcd1234"
         assert msg["target_host"] == "127.0.0.1"
         assert msg["target_port"] == 22
 
@@ -37,7 +37,7 @@ class TestMakeMsg:
         raw = make_msg("connect_ok", "abcd1234abcd1234")
         msg = json.loads(raw)
         assert msg["type"] == "connect_ok"
-        assert msg["stream_id"] == "abcd1234abcd1234"
+        assert msg["id"] == "abcd1234abcd1234"
 
     def test_connect_fail(self):
         raw = make_msg("connect_fail", "abcd1234abcd1234", reason="refused")
@@ -101,7 +101,7 @@ class TestParseMsg:
 
     def test_missing_type(self):
         with pytest.raises(ValueError, match="missing.*type"):
-            parse_msg('{"stream_id": "abc"}')
+            parse_msg('{"id": "abc"}')
 
     def test_non_data_payload_not_decoded(self):
         """For non-data types, payload (if present) should not be decoded."""

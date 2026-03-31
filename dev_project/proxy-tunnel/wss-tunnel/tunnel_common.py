@@ -23,7 +23,7 @@ def make_msg(msg_type: str, stream_id: str, **kwargs) -> str:
 
     If *payload* is ``bytes``, it is base64-encoded before serialisation.
     """
-    msg: dict = {"type": msg_type, "stream_id": stream_id}
+    msg: dict = {"type": msg_type, "id": stream_id}
     for key, value in kwargs.items():
         if key == "payload" and isinstance(value, bytes):
             msg[key] = base64.b64encode(value).decode("ascii")
