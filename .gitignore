@@ -1,3 +1,6 @@
 .DS_Store
 .playwright-mcp/
 *.zip
+__pycache__/
+*.mp4
+*.mkv
